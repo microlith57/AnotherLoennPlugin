@@ -10,7 +10,7 @@ local _orig_fieldInformation = parallax.fieldInformation
 local fieldInformation_texture = {
   fieldType = "path",
   filePickerExtensions = {"png"},
-  allowMissingPath = true, -- TODO: implement proper resolver
+  allowMissingPath = true, -- todo: implement proper resolver
   relativeToMod = false,
   filenameProcessor = function(filename)
     local modPath = mods.getFilenameModPath(filename)
@@ -19,7 +19,7 @@ local fieldInformation_texture = {
       filename = string.sub(filename, #modPath + 2)
     else
       -- texture is (probably) from the graphics dump, so get its path within that
-      -- TODO: better check?
+      -- todo: better check?
       local index = string.find(filename, "Graphics")
       if index then
         filename = string.sub(filename, index)
