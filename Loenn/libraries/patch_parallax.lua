@@ -1,3 +1,8 @@
+local meta = require("meta")
+if meta.version >= version("0.4.3") then
+    return
+end
+
 local mods = require("mods")
 local parallax = require("parallax")
 local utils = require("utils")
