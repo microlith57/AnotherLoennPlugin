@@ -1,6 +1,7 @@
 local meta = require("meta")
-if meta.version >= version("0.4.3") then
-    return
+local version = require("utils.version_parser")
+if meta.version >= version("0.4.3") and meta.version ~= version("0.0.0-dev") then
+  return
 end
 
 local celesteRender = require("celeste_render")
@@ -19,6 +20,7 @@ preview.bg_enabled = false
 preview.fg_enabled = false
 preview.bg_canvas = nil
 preview.fg_canvas = nil
+preview.snap_to_room = true
 
 function preview.toggle_bg()
   preview.bg_enabled = not preview.bg_enabled
@@ -28,18 +30,40 @@ function preview.toggle_fg()
   preview.fg_enabled = not preview.fg_enabled
 end
 
----
-
-function preview.previewPos()
-  local centre_x = (viewportHandler.viewport.x + viewportHandler.viewport.width / 2) / viewportHandler.viewport.scale
-  local centre_y = (viewportHandler.viewport.y + viewportHandler.viewport.height / 2) / viewportHandler.viewport.scale
-
-  return math.floor(centre_x - canvasWidth / 2), math.floor(centre_y - canvasHeight / 2)
+function preview.toggle_snap()
+  preview.snap_to_room = not preview.snap_to_room
 end
 
 ---
 
--- todo: don't do this
+--[[
+  get the position of the top-left corner of the preview rectangle, snapping to the selected room's bounds if necessary
+]]
+function preview.previewPos(state)
+  local centre_x = (viewportHandler.viewport.x + viewportHandler.viewport.width / 2) / viewportHandler.viewport.scale
+  local centre_y = (viewportHandler.viewport.y + viewportHandler.viewport.height / 2) / viewportHandler.viewport.scale
+
+  local pos_x = math.floor(centre_x - canvasWidth / 2)
+  local pos_y = math.floor(centre_y - canvasHeight / 2)
+
+  if preview.snap_to_room and state then
+    local room = state.getSelectedRoom()
+    if room and room.x and room.y and room.width and room.height then
+      pos_x = math.min(math.max(room.x, pos_x), room.x + room.width - canvasWidth)
+      pos_y = math.min(math.max(room.y, pos_y), room.y + room.height - canvasHeight)
+    end
+  end
+
+  return pos_x, pos_y
+end
+
+---
+
+--[[
+  check if the given room name is in a room list, using the comma-separated, *-wildcard format
+  note that this is not cached so the expensive operations here happen 2 times per styleground per frame
+  (ideally this would be moved elsewhere and cached)
+]]
 local function room_in_list(room, list)
   if not room then return false end
   if not list or list == "" then return false end
@@ -48,6 +72,7 @@ local function room_in_list(room, list)
   list = string.gsub(list, [[%*]], [[.*]])
 
   for i, part in ipairs(list:split(",")()) do
+    if part == room then return true end
     -- worst possible way to do this
     local m = room:match(part)
     if m == room then return true end
@@ -58,9 +83,12 @@ end
 
 ---
 
+--[[
+  render the given parallax like celeste would.
+  currently missing fadex, fadey on purpose
+]]
 function preview.renderParallax(state, selectedRoom, parallax)
-  -- todo: fadex, fadey
-
+  -- don't render parallaxes that don't belong in the selected room
   if selectedRoom then
     if room_in_list(selectedRoom, parallax.exclude or "")
        or not room_in_list(selectedRoom, parallax.only or "*") then
@@ -72,6 +100,7 @@ function preview.renderParallax(state, selectedRoom, parallax)
 
   local a = parallax.alpha or 1
 
+  -- don't render invisible parallaxes
   if a <= 0 then return end
   if parallax.texture == nil or parallax.texture == "" then return end
 
@@ -102,44 +131,46 @@ function preview.renderParallax(state, selectedRoom, parallax)
     love.graphics.setBlendMode("alpha")
   end
 
+  -- get the texture from the atlas
+  -- review: seems not to return the right size for some clouds etc.?
   local sprite = drawableSprite.fromTexture(parallax.texture, {
     scaleX = (parallax.flipx and -1 or 1),
     scaleY = (parallax.flipy and -1 or 1),
     color = color,
     depth = 0,
-    justificationX = 0.5, justificationY = 0.5,
+    justificationX = 0.5, justificationY = 0.5, -- needed for flipping to work correctly
     atlas = atlas,
   })
 
   if sprite then
-    local cam_x, cam_y = preview.previewPos()
+    local cam_x, cam_y = preview.previewPos(state)
+    local width, height = sprite.meta.realWidth, sprite.meta.realHeight
 
+    -- handle positioning
     local pos_x = (parallax.x or 0) - cam_x * (parallax.scrollx or 0)
     local pos_y = (parallax.y or 0) - cam_y * (parallax.scrolly or 0)
 
+    local repeats_x, repeats_y = 0, 0
+
+    -- reposition looping stylegrounds, and figure out how many times to draw them
     -- review: this seems like it might be wrong in some situations, but i don't know why
     if parallax.loopx ~= false then
-      local width = sprite.meta.width
       pos_x = math.fmod((math.fmod(pos_x, width) - width), width)
       pos_x = math.ceil(pos_x)
+      repeats_x = math.ceil((canvasWidth - pos_x) / width) - 1
     end
     if parallax.loopy ~= false then
-      local height = sprite.meta.height
       pos_y = math.fmod((math.fmod(pos_y, height) - height), height)
       pos_y = math.ceil(pos_y)
+      repeats_y = math.ceil((canvasHeight - pos_y) / height) - 1
     end
 
-    while pos_x <= canvasWidth do
-      while pos_y <= canvasHeight do
-        sprite.x = pos_x + (canvasWidth / 2)
-        sprite.y = pos_y + (canvasHeight / 2)
+    for i=0, repeats_x, 1 do
+      for j=0, repeats_y, 1 do
+        sprite.x = pos_x + (width / 2) + (i * width)
+        sprite.y = pos_y + (height / 2) + (j * height)
         sprite:draw()
-
-        if parallax.loopy == false then break end
-        pos_y += sprite.meta.height
       end
-      if parallax.loopx == false then break end
-      pos_x += sprite.meta.width
     end
   end
 
@@ -148,19 +179,25 @@ end
 
 ---
 
-function preview.draw(canvas)
+--[[
+  draw the given canvas in the right place
+]]
+function preview.draw(state, canvas)
   if not canvas then return end
 
-  local x, y = preview.previewPos()
+  local x, y = preview.previewPos(state)
   viewportHandler.drawRelativeTo(x, y, function()
     love.graphics.draw(canvas)
   end)
 end
 
+--[[
+  render a styleground list onto the given canvas
+]]
 function preview.update(state, stylegrounds, canvas)
-  local selectedItem, selectedItemType = state.getSelectedItem()
+  local selectedItem = state.getSelectedRoom()
   local selectedRoom
-  if selectedItemType ~= "table" and selectedItem then selectedRoom = selectedItem.name end
+  if selectedItem then selectedRoom = selectedItem.name end
 
   canvas:renderTo(function()
     love.graphics.clear(0, 0, 0, 0)
@@ -176,12 +213,9 @@ function preview.update(state, stylegrounds, canvas)
   end)
 end
 
-function preview.draw_outline(state)
-
-end
-
 function preview.draw_bg(state)
-  local x, y = preview.previewPos()
+  -- draw the black background
+  local x, y = preview.previewPos(state)
   viewportHandler.drawRelativeTo(x, y, function()
     drawing.callKeepOriginalColor(function()
       love.graphics.setColor(0, 0, 0)
@@ -189,27 +223,21 @@ function preview.draw_bg(state)
     end)
   end)
 
+  -- create the bg canvas if necessary, populate it, and draw it to the screen
   if not bg_canvas then
     bg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
   end
   preview.update(state, state.map.stylesBg, bg_canvas)
-  preview.draw(bg_canvas)
+  preview.draw(state, bg_canvas)
 end
 
 function preview.draw_fg(state)
-  local x, y = preview.previewPos()
-  viewportHandler.drawRelativeTo(x, y, function()
-    drawing.callKeepOriginalColor(function()
-      love.graphics.setColor(0, 0, 0)
-      love.graphics.rectangle("line", 0, 0, canvasWidth, canvasHeight)
-    end)
-  end)
-
+  -- create the fg canvas if necessary, populate it, and draw it to the screen
   if not fg_canvas then
     fg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
   end
   preview.update(state, state.map.stylesFg, fg_canvas)
-  preview.draw(fg_canvas)
+  preview.draw(state, fg_canvas)
 end
 
 ---
@@ -218,6 +246,9 @@ if celesteRender.___anotherLoennPlugin then
   celesteRender.___anotherLoennPlugin.unload()
 end
 
+--[[
+  patch the drawMap function to also draw bg and fg stylegrounds if enabled
+]]
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
   if state and state.map and preview.bg_enabled then
@@ -231,6 +262,9 @@ function celesteRender.drawMap(state)
   end
 end
 
+--[[
+  patch the getRoomBackgroundColor function to return transparency if there are stylegrounds behind (so they aren't covered up)
+]]
 local _orig_getRoomBackgroundColor = celesteRender.getRoomBackgroundColor
 function celesteRender.getRoomBackgroundColor(room, selected)
   if preview.bg_enabled then
@@ -248,6 +282,10 @@ celesteRender.___anotherLoennPlugin = {
 }
 
 ---
+
+--[[
+  add the menu options
+]]
 
 local menubar = require("ui.menubar").menubar
 local viewMenu = $(menubar):find(menu -> menu[1] == "view")[2]
@@ -273,6 +311,17 @@ checkbox_fg[1] = "anotherloennplugin_styleground_preview_fg"
 checkbox_fg[2] = preview.toggle_fg
 checkbox_fg[3] = "checkbox"
 checkbox_fg[4] = function() return preview.fg_enabled end
+
+local checkbox_snap = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_snap")
+if not checkbox_snap then
+  checkbox_snap = {}
+  table.insert(viewMenu, checkbox_snap)
+end
+
+checkbox_snap[1] = "anotherloennplugin_styleground_preview_snap"
+checkbox_snap[2] = preview.toggle_snap
+checkbox_snap[3] = "checkbox"
+checkbox_snap[4] = function() return preview.snap_to_room end
 
 ---
 
