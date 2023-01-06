@@ -132,7 +132,6 @@ function preview.renderParallax(state, selectedRoom, parallax)
   end
 
   -- get the texture from the atlas
-  -- review: seems not to return the right size for some clouds etc.?
   local sprite = drawableSprite.fromTexture(parallax.texture, {
     scaleX = (parallax.flipx and -1 or 1),
     scaleY = (parallax.flipy and -1 or 1),
@@ -153,7 +152,6 @@ function preview.renderParallax(state, selectedRoom, parallax)
     local repeats_x, repeats_y = 0, 0
 
     -- reposition looping stylegrounds, and figure out how many times to draw them
-    -- review: this seems like it might be wrong in some situations, but i don't know why
     if parallax.loopx ~= false then
       pos_x = math.fmod((math.fmod(pos_x, width) - width), width)
       pos_x = math.ceil(pos_x)
