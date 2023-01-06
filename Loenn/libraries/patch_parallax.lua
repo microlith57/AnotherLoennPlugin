@@ -1,6 +1,7 @@
 local meta = require("meta")
-if meta.version >= version("0.4.3") then
-    return
+local version = require("utils.version_parser")
+if meta.version >= version("0.4.3") and meta.version ~= version("0.0.0-dev") then
+  return
 end
 
 local mods = require("mods")
@@ -55,3 +56,5 @@ parallax.___anotherLoennPlugin = {
     parallax.fieldInformation = _orig_fieldInformation
   end
 }
+
+return {}
