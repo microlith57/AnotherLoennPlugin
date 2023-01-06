@@ -104,7 +104,7 @@ function preview.renderParallax(state, selectedRoom, parallax)
   if a <= 0 then return end
   if parallax.texture == nil or parallax.texture == "" then return end
 
-  -- todo: find another way to do this?
+  -- todo: find another way to do this? this doesn't even seem to work
   local atlas = "Gameplay"
   if parallax.texture == "darkswamp"
     or parallax.texture == "mist"
