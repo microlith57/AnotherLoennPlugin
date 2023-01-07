@@ -188,7 +188,7 @@ end
 --[[
   render a styleground list onto the given canvas
 ]]
-function preview.update(state, stylegrounds, canvas)
+function preview.update(state, stylegrounds, canvas, props)
   local selectedItem = state.getSelectedRoom()
   local selectedRoom
   if selectedItem then selectedRoom = selectedItem.name end
@@ -199,9 +199,23 @@ function preview.update(state, stylegrounds, canvas)
     for _, style in ipairs(stylegrounds) do
       local typ = utils.typeof(style)
       if typ == "parallax" then
-        preview.renderParallax(state, selectedRoom, style)
+        local copy = table.shallowcopy(props)
+
+        for k, v in pairs(style) do
+          copy[k] = v
+        end
+
+        preview.renderParallax(state, selectedRoom, copy)
       elseif typ == "apply" and style.children then
-        preview.update(state, style.children, canvas)
+        -- recurse over this group's children, passing on the properties of this group and upper-level groups
+        local new_props = table.shallowcopy(props)
+        for k, v in pairs(style) do
+          if k ~= "_type" and k ~= "children" then
+            new_props[k] = v
+          end
+        end
+
+        preview.update(state, style.children, canvas, new_props)
       end
     end
   end)
@@ -221,7 +235,7 @@ function preview.draw_bg(state)
   if not bg_canvas then
     bg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
   end
-  preview.update(state, state.map.stylesBg, bg_canvas)
+  preview.update(state, state.map.stylesBg, bg_canvas, {})
   preview.draw(state, bg_canvas)
 end
 
@@ -230,7 +244,7 @@ function preview.draw_fg(state)
   if not fg_canvas then
     fg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
   end
-  preview.update(state, state.map.stylesFg, fg_canvas)
+  preview.update(state, state.map.stylesFg, fg_canvas, {})
   preview.draw(state, fg_canvas)
 end
 
