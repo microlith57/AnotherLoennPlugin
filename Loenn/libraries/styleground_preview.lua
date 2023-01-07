@@ -11,6 +11,8 @@ local utils = require("utils")
 local drawing = require("utils.drawing")
 local atlases = require("atlases")
 
+local parallaxExt = require("mods").requireFromPlugin("libraries.parallax_ext")
+
 local canvasWidth = 320
 local canvasHeight = 180
 
@@ -60,58 +62,32 @@ end
 ---
 
 --[[
-  check if the given room name is in a room list, using the comma-separated, *-wildcard format
-  note that this is not cached so the expensive operations here happen 2 times per styleground per frame
-  (ideally this would be moved elsewhere and cached)
-]]
-local function room_in_list(room, list)
-  if not room then return false end
-  if not list or list == "" then return false end
-  if list == "*" then return true end
-
-  list = string.gsub(list, [[%*]], [[.*]])
-
-  for i, part in ipairs(list:split(",")()) do
-    if part == room then return true end
-    -- worst possible way to do this
-    local m = room:match(part)
-    if m == room then return true end
-  end
-
-  return false
-end
-
----
-
---[[
   render the given parallax like celeste would.
   currently missing fadex, fadey on purpose
 ]]
 function preview.renderParallax(state, selectedRoom, parallax)
-  -- don't render parallaxes that don't belong in the selected room
-  if selectedRoom then
-    if room_in_list(selectedRoom, parallax.exclude or "")
-       or not room_in_list(selectedRoom, parallax.only or "*") then
-      return
-    end
-  elseif parallax.only and parallax.only ~= "*" then
-    return
-  end
-
   local a = parallax.alpha or 1
+  local tex = parallax.texture
 
   -- don't render invisible parallaxes
   if a <= 0 then return end
-  if parallax.texture == nil or parallax.texture == "" then return end
+  if not tex or tex == "" then return end
 
-  -- todo: find another way to do this? this doesn't even seem to work
-  local atlas = "Gameplay"
-  if parallax.texture == "darkswamp"
-    or parallax.texture == "mist"
-    or parallax.texture == "northernlights"
-    or parallax.texture == "purplesunset"
-    or parallax.texture == "vignette" then
-    atlas = "Misc"
+  -- don't render parallaxes that don't belong in the selected room
+  if selectedRoom then
+    if not parallaxExt.isInRoom(parallax, selectedRoom) then return end
+  elseif (parallax.only and parallax.only ~= "*")
+      or (parallax.exclude and parallax.exclude ~= "") then
+    return
+  end
+
+  if tex == "darkswamp"
+    or tex == "mist"
+    or tex == "northernlights" -- todo: northernlights doesn't render; too big?
+    or tex == "purplesunset"
+    or tex == "vignette" then
+    -- can't load Misc textures, so load a copy from Gameplay instead
+    tex = "bgs/microlith57/AnotherLoennPlugin/" .. tex
   end
 
   local color = {1, 1, 1, a}
@@ -132,13 +108,12 @@ function preview.renderParallax(state, selectedRoom, parallax)
   end
 
   -- get the texture from the atlas
-  local sprite = drawableSprite.fromTexture(parallax.texture, {
+  local sprite = drawableSprite.fromTexture(tex, {
     scaleX = (parallax.flipx and -1 or 1),
     scaleY = (parallax.flipy and -1 or 1),
     color = color,
     depth = 0,
     justificationX = 0.5, justificationY = 0.5, -- needed for flipping to work correctly
-    atlas = atlas,
   })
 
   if sprite then
