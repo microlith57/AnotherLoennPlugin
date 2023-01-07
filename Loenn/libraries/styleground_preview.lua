@@ -23,6 +23,7 @@ preview.fg_enabled = false
 preview.bg_canvas = nil
 preview.fg_canvas = nil
 preview.snap_to_room = true
+preview.anim_start = nil
 
 function preview.toggle_bg()
   preview.bg_enabled = not preview.bg_enabled
@@ -34,6 +35,14 @@ end
 
 function preview.toggle_snap()
   preview.snap_to_room = not preview.snap_to_room
+end
+
+function preview.toggle_anim()
+  if preview.anim_start == nil then
+    preview.anim_start = love.timer.getTime()
+  else
+    preview.anim_start = nil
+  end
 end
 
 ---
@@ -126,6 +135,15 @@ function preview.renderParallax(state, selectedRoom, parallax)
     -- handle positioning
     local pos_x = (parallax.x or 0) - cam_x * (parallax.scrollx or 0)
     local pos_y = (parallax.y or 0) - cam_y * (parallax.scrolly or 0)
+
+    if preview.anim_start then
+      if parallax.speedx then
+        pos_x += ((love.timer.getTime() - preview.anim_start) * parallax.speedx)
+      end
+      if parallax.speedy then
+        pos_y += ((love.timer.getTime() - preview.anim_start) * parallax.speedy)
+      end
+    end
 
     local repeats_x, repeats_y = 0, 0
 
@@ -298,6 +316,18 @@ checkbox_snap[1] = "anotherloennplugin_styleground_preview_snap"
 checkbox_snap[2] = preview.toggle_snap
 checkbox_snap[3] = "checkbox"
 checkbox_snap[4] = function() return preview.snap_to_room end
+
+
+local checkbox_anim = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_anim")
+if not checkbox_anim then
+  checkbox_anim = {}
+  table.insert(viewMenu, checkbox_anim)
+end
+
+checkbox_anim[1] = "anotherloennplugin_styleground_preview_anim"
+checkbox_anim[2] = preview.toggle_anim
+checkbox_anim[3] = "checkbox"
+checkbox_anim[4] = function() return preview.anim_start ~= nil end
 
 ---
 
