@@ -96,7 +96,7 @@ function preview.renderParallax(state, selectedRoom, parallax)
 
   if tex == "darkswamp"
     or tex == "mist"
-    or tex == "northernlights" -- todo: northernlights doesn't render; too big?
+    or tex == "northernlights"
     or tex == "purplesunset"
     or tex == "vignette" then
     -- can't load Misc textures, so load a copy from Gameplay instead
@@ -174,78 +174,70 @@ end
 ---
 
 --[[
-  draw the given canvas in the right place
+  render a styleground list onto the given canvas
 ]]
-function preview.draw(state, canvas)
-  if not canvas then return end
+function preview.renderAll(state, stylegrounds, canvas, selectedRoom, props)
+  for _, style in ipairs(stylegrounds) do
+    local typ = utils.typeof(style)
+    if typ == "parallax" then
+      local copy = table.shallowcopy(props)
+
+      for k, v in pairs(style) do
+        copy[k] = v
+      end
+
+      preview.renderParallax(state, selectedRoom, copy)
+    elseif typ == "apply" and style.children then
+      -- recurse over this group's children, passing on the properties of this group and upper-level groups
+      local new_props = table.shallowcopy(props)
+      for k, v in pairs(style) do
+        if k ~= "_type" and k ~= "children" then
+          new_props[k] = v
+        end
+      end
+
+      preview.renderAll(state, style.children, canvas, selectedRoom, new_props)
+    end
+  end
+end
+
+--[[
+  create a canvas if necessary, populate it, and draw it to the screen
+]]
+function preview.draw(state, isFg)
+  local selectedItem = state.getSelectedRoom()
+  local selectedRoom
+  if selectedItem then selectedRoom = selectedItem.name end
+
+  local canvas, stylegrounds
+  if isFg then
+    if not fg_canvas then
+      fg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
+    end
+    canvas = fg_canvas
+    stylegrounds = state.map.stylesFg
+  else
+    if not bg_canvas then
+      bg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
+    end
+    canvas = bg_canvas
+    stylegrounds = state.map.stylesBg
+  end
+
+  canvas:renderTo(function()
+    if isFg then
+      love.graphics.clear(0, 0, 0, 0)
+    else
+      love.graphics.clear(0, 0, 0, 255)
+    end
+
+    preview.renderAll(state, stylegrounds, canvas, selectedRoom, {})
+  end)
 
   local x, y = preview.previewPos(state)
   viewportHandler.drawRelativeTo(x, y, function()
     love.graphics.draw(canvas)
   end)
-end
-
---[[
-  render a styleground list onto the given canvas
-]]
-function preview.update(state, stylegrounds, canvas, props)
-  local selectedItem = state.getSelectedRoom()
-  local selectedRoom
-  if selectedItem then selectedRoom = selectedItem.name end
-
-  canvas:renderTo(function()
-    love.graphics.clear(0, 0, 0, 0)
-
-    for _, style in ipairs(stylegrounds) do
-      local typ = utils.typeof(style)
-      if typ == "parallax" then
-        local copy = table.shallowcopy(props)
-
-        for k, v in pairs(style) do
-          copy[k] = v
-        end
-
-        preview.renderParallax(state, selectedRoom, copy)
-      elseif typ == "apply" and style.children then
-        -- recurse over this group's children, passing on the properties of this group and upper-level groups
-        local new_props = table.shallowcopy(props)
-        for k, v in pairs(style) do
-          if k ~= "_type" and k ~= "children" then
-            new_props[k] = v
-          end
-        end
-
-        preview.update(state, style.children, canvas, new_props)
-      end
-    end
-  end)
-end
-
-function preview.draw_bg(state)
-  -- draw the black background
-  local x, y = preview.previewPos(state)
-  viewportHandler.drawRelativeTo(x, y, function()
-    drawing.callKeepOriginalColor(function()
-      love.graphics.setColor(0, 0, 0)
-      love.graphics.rectangle("fill", 0, 0, canvasWidth, canvasHeight)
-    end)
-  end)
-
-  -- create the bg canvas if necessary, populate it, and draw it to the screen
-  if not bg_canvas then
-    bg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
-  end
-  preview.update(state, state.map.stylesBg, bg_canvas, {})
-  preview.draw(state, bg_canvas)
-end
-
-function preview.draw_fg(state)
-  -- create the fg canvas if necessary, populate it, and draw it to the screen
-  if not fg_canvas then
-    fg_canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
-  end
-  preview.update(state, state.map.stylesFg, fg_canvas, {})
-  preview.draw(state, fg_canvas)
 end
 
 ---
@@ -260,13 +252,13 @@ end
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
   if state and state.map and preview.bg_enabled then
-    preview.draw_bg(state)
+    preview.draw(state, false)
   end
 
   _orig_drawMap(state)
 
   if state and state.map and preview.fg_enabled then
-    preview.draw_fg(state)
+    preview.draw(state, true)
   end
 end
 
