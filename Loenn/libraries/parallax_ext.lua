@@ -157,15 +157,17 @@ function parallaxExt.getFade(parallax, x, y)
   local alpha = 1
   for i, fader in ipairs(ext.f_fadex) do
     -- simulate Calc.ClampedMap
-    alpha *= utils.clamp((x - fader.coordFrom) / (fader.coordTo - fader.coordFrom), 0, 1)
-           * (fader.fadeTo - fader.fadeFrom)
-           + fader.fadeFrom;
+    alpha = alpha
+          * (utils.clamp((x - fader.coordFrom) / (fader.coordTo - fader.coordFrom), 0, 1)
+             * (fader.fadeTo - fader.fadeFrom)
+             + fader.fadeFrom)
   end
   for i, fader in ipairs(ext.f_fadey) do
     -- simulate Calc.ClampedMap
-    alpha *= utils.clamp((y - fader.coordFrom) / (fader.coordTo - fader.coordFrom), 0, 1)
-           * (fader.fadeTo - fader.fadeFrom)
-           + fader.fadeFrom;
+    alpha = alpha
+          * (utils.clamp((y - fader.coordFrom) / (fader.coordTo - fader.coordFrom), 0, 1)
+            * (fader.fadeTo - fader.fadeFrom)
+            + fader.fadeFrom)
   end
   return alpha
 end
