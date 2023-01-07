@@ -1,7 +1,7 @@
 local meta = require("meta")
 local version = require("utils.version_parser")
 if meta.version ~= version("0.4.3") and meta.version ~= version("0.0.0-dev") then
-  return
+  return {}
 end
 
 local celesteRender = require("celeste_render")
