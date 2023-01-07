@@ -51,8 +51,8 @@ function preview.previewPos(state)
   if preview.snap_to_room and state then
     local room = state.getSelectedRoom()
     if room and room.x and room.y and room.width and room.height then
-      pos_x = math.min(math.max(room.x, pos_x), room.x + room.width - canvasWidth)
-      pos_y = math.min(math.max(room.y, pos_y), room.y + room.height - canvasHeight - 4)
+      pos_x = utils.clamp(room.x, pos_x, room.x + room.width - canvasWidth)
+      pos_y = utils.clamp(room.y, pos_y, room.y + room.height - canvasHeight - 4)
     end
   end
 
