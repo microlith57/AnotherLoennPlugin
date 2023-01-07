@@ -68,9 +68,9 @@ end
 function preview.renderParallax(state, selectedRoom, parallax)
   local a = parallax.alpha or 1
   local tex = parallax.texture
+  local cam_x, cam_y = preview.previewPos(state)
 
   -- don't render invisible parallaxes
-  if a <= 0 then return end
   if not tex or tex == "" then return end
 
   -- don't render parallaxes that don't belong in the selected room
@@ -80,6 +80,10 @@ function preview.renderParallax(state, selectedRoom, parallax)
       or (parallax.exclude and parallax.exclude ~= "") then
     return
   end
+
+  -- process faders; if the parallax is completely invisible, don't render it at all
+  a *= parallaxExt.getFade(parallax, cam_x + canvasWidth / 2, cam_y + canvasHeight / 2)
+  if a <= 0 then return end
 
   if tex == "darkswamp"
     or tex == "mist"
@@ -117,7 +121,6 @@ function preview.renderParallax(state, selectedRoom, parallax)
   })
 
   if sprite then
-    local cam_x, cam_y = preview.previewPos(state)
     local width, height = sprite.meta.realWidth, sprite.meta.realHeight
 
     -- handle positioning
