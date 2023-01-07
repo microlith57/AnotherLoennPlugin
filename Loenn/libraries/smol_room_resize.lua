@@ -40,3 +40,6 @@ roomResizer.___anotherLoennPlugin = {
     roomResizer.mousemoved = _orig_mousemoved
   end
 }
+
+
+return {}
