@@ -9,6 +9,8 @@ local roomResizer = require("input_devices.room_resizer")
 local keyboardHelper = require("utils.keyboard")
 local configs = require("configs")
 
+---
+
 if roomResizer.___anotherLoennPlugin then
   roomResizer.___anotherLoennPlugin.unload()
 end
@@ -41,5 +43,6 @@ roomResizer.___anotherLoennPlugin = {
   end
 }
 
+---
 
 return {}

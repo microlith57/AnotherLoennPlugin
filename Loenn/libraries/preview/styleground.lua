@@ -4,14 +4,13 @@ if meta.version ~= version("0.4.3") and meta.version ~= version("0.0.0-dev") the
   return {}
 end
 
-local celesteRender = require("celeste_render")
 local viewportHandler = require("viewport_handler")
 local drawableSprite = require("structs.drawable_sprite")
 local utils = require("utils")
 local drawing = require("utils.drawing")
 local atlases = require("atlases")
 
-local parallaxExt = require("mods").requireFromPlugin("libraries.parallax_ext")
+local parallaxExt = require("mods").requireFromPlugin("libraries.ext.parallax")
 
 local canvasWidth = 320
 local canvasHeight = 180
@@ -239,101 +238,6 @@ function preview.draw(state, isFg)
     love.graphics.draw(canvas)
   end)
 end
-
----
-
-if celesteRender.___anotherLoennPlugin then
-  celesteRender.___anotherLoennPlugin.unload()
-end
-
---[[
-  patch the drawMap function to also draw bg and fg stylegrounds if enabled
-]]
-local _orig_drawMap = celesteRender.drawMap
-function celesteRender.drawMap(state)
-  if state and state.map and preview.bg_enabled then
-    preview.draw(state, false)
-  end
-
-  _orig_drawMap(state)
-
-  if state and state.map and preview.fg_enabled then
-    preview.draw(state, true)
-  end
-end
-
---[[
-  patch the getRoomBackgroundColor function to return transparency if there are stylegrounds behind (so they aren't covered up)
-]]
-local _orig_getRoomBackgroundColor = celesteRender.getRoomBackgroundColor
-function celesteRender.getRoomBackgroundColor(room, selected)
-  if preview.bg_enabled then
-    return {0, 0, 0, 0}
-  else
-    return _orig_getRoomBackgroundColor(room, selected)
-  end
-end
-
-celesteRender.___anotherLoennPlugin = {
-  unload = function()
-    celesteRender.drawMap = _orig_drawMap
-    celesteRender.getRoomBackgroundColor = _orig_getRoomBackgroundColor
-  end
-}
-
----
-
---[[
-  add the menu options
-]]
-
-local menubar = require("ui.menubar").menubar
-local viewMenu = $(menubar):find(menu -> menu[1] == "view")[2]
-
-local checkbox_bg = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_bg")
-if not checkbox_bg then
-  checkbox_bg = {}
-  table.insert(viewMenu, checkbox_bg)
-end
-
-checkbox_bg[1] = "anotherloennplugin_styleground_preview_bg"
-checkbox_bg[2] = preview.toggle_bg
-checkbox_bg[3] = "checkbox"
-checkbox_bg[4] = function() return preview.bg_enabled end
-
-local checkbox_fg = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_fg")
-if not checkbox_fg then
-  checkbox_fg = {}
-  table.insert(viewMenu, checkbox_fg)
-end
-
-checkbox_fg[1] = "anotherloennplugin_styleground_preview_fg"
-checkbox_fg[2] = preview.toggle_fg
-checkbox_fg[3] = "checkbox"
-checkbox_fg[4] = function() return preview.fg_enabled end
-
-local checkbox_snap = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_snap")
-if not checkbox_snap then
-  checkbox_snap = {}
-  table.insert(viewMenu, checkbox_snap)
-end
-
-checkbox_snap[1] = "anotherloennplugin_styleground_preview_snap"
-checkbox_snap[2] = preview.toggle_snap
-checkbox_snap[3] = "checkbox"
-checkbox_snap[4] = function() return preview.snap_to_room end
-
-
-local checkbox_anim = $(viewMenu):find(item -> item[1] == "anotherloennplugin_styleground_preview_anim")
-if not checkbox_anim then
-  checkbox_anim = {}
-  table.insert(viewMenu, checkbox_anim)
-end
-
-checkbox_anim[1] = "anotherloennplugin_styleground_preview_anim"
-checkbox_anim[2] = preview.toggle_anim
-checkbox_anim[3] = "checkbox"
-checkbox_anim[4] = function() return preview.anim_start ~= nil end
 
 ---
 

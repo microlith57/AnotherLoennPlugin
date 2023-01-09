@@ -8,6 +8,8 @@ local mods = require("mods")
 local parallax = require("parallax")
 local utils = require("utils")
 
+---
+
 if parallax.___anotherLoennPlugin then
   parallax.___anotherLoennPlugin.unload()
 end
@@ -56,5 +58,7 @@ parallax.___anotherLoennPlugin = {
     parallax.fieldInformation = _orig_fieldInformation
   end
 }
+
+---
 
 return {}
