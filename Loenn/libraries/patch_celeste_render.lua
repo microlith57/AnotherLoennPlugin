@@ -7,6 +7,7 @@ end
 local celesteRender = require("celeste_render")
 
 local stylegroundPreview = require("mods").requireFromPlugin("libraries.preview.styleground")
+local colorgradePreview = require("mods").requireFromPlugin("libraries.preview.colorgrade")
 
 ---
 
@@ -19,6 +20,12 @@ end
 ]]
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
+  local prev_shader
+  if colorgradePreview.enabled then
+    prev_shader = love.graphics.getShader()
+    colorgradePreview.setShader()
+  end
+
   if state and state.map and stylegroundPreview.bg_enabled then
     stylegroundPreview.draw(state, false)
   end
@@ -27,6 +34,10 @@ function celesteRender.drawMap(state)
 
   if state and state.map and stylegroundPreview.fg_enabled then
     stylegroundPreview.draw(state, true)
+  end
+
+  if prev_shader then
+    love.graphics.setShader(prev_shader)
   end
 end
 
