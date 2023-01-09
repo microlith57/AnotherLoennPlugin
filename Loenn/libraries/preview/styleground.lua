@@ -12,6 +12,8 @@ local atlases = require("atlases")
 
 local parallaxExt = require("mods").requireFromPlugin("libraries.ext.parallax")
 
+---
+
 local canvasWidth = 320
 local canvasHeight = 180
 
