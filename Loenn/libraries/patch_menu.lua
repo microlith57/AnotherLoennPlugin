@@ -7,6 +7,7 @@ end
 local menubar = require("ui.menubar").menubar
 
 local stylegroundPreview = require("mods").requireFromPlugin("libraries.preview.styleground")
+local colorgradePreview = require("mods").requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
 
 ---
 
@@ -45,6 +46,12 @@ checkbox(viewMenu, "anotherloennplugin_styleground_preview_snap",
 checkbox(viewMenu, "anotherloennplugin_styleground_preview_anim",
          stylegroundPreview.toggle_anim,
          function() return stylegroundPreview.anim_start ~= nil end)
+
+if colorgradePreview then
+  checkbox(viewMenu, "anotherloennplugin_colorgrade_preview",
+          colorgradePreview.toggle,
+          function() return colorgradePreview.enabled end)
+end
 
 ---
 

@@ -7,6 +7,7 @@ end
 local celesteRender = require("celeste_render")
 
 local stylegroundPreview = require("mods").requireFromPlugin("libraries.preview.styleground")
+local colorgradePreview = require("mods").requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
 
 ---
 
@@ -19,6 +20,9 @@ end
 ]]
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
+  if state and colorgradePreview and colorgradePreview.enabled then
+    colorgradePreview.begin_preview(state)
+  end
   if state and state.map and stylegroundPreview.bg_enabled then
     stylegroundPreview.draw(state, false)
   end
@@ -27,6 +31,9 @@ function celesteRender.drawMap(state)
 
   if state and state.map and stylegroundPreview.fg_enabled then
     stylegroundPreview.draw(state, true)
+  end
+  if state and colorgradePreview and colorgradePreview.enabled then
+    colorgradePreview.end_preview(state)
   end
 end
 
