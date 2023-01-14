@@ -1,5 +1,6 @@
 # styleground preview
-ui.menubar.anotherloennplugin_styleground_preview_bg=Preview Background
-ui.menubar.anotherloennplugin_styleground_preview_fg=Preview Foreground
-ui.menubar.anotherloennplugin_styleground_preview_snap=Snap to Room
-ui.menubar.anotherloennplugin_styleground_preview_anim=Animate
+ui.menubar.anotherloennplugin_preview_styleground=Stylegrounds
+ui.menubar.anotherloennplugin_preview_styleground_bg=Background
+ui.menubar.anotherloennplugin_preview_styleground_fg=Foreground
+ui.menubar.anotherloennplugin_preview_styleground_snap=Snap to Room
+ui.menubar.anotherloennplugin_preview_styleground_anim=Animate
