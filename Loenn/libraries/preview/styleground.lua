@@ -81,8 +81,7 @@ end
 ---
 
 --[[
-  render the given parallax like celeste would.
-  currently missing fadex, fadey on purpose
+  render the given parallax like celeste would
 ]]
 function preview.renderParallax(state, selectedRoom, parallax)
   local a = parallax.alpha or 1
