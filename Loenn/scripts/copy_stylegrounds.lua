@@ -1,17 +1,45 @@
 local state = require("loaded_state")
 local utils = require("utils")
 
+local room_list = require("mods").requireFromPlugin("libraries.parsers.room_list")
+
+---
+
 local script = {
   name = "copyStylegroundsToClipboard",
   parameters = {
-    convertApplyGroupsToFlattenedList = true
+    convertApplyGroupsToFlattenedList = true,
+    onlySelectedRooms = false
   },
   displayName = "Clipboard: Copy Stylegrounds",
   tooltip = "Copies stylegrounds from the map into the clipboard.",
   tooltips = {
-    convertApplyGroupsToFlattenedList = "Whether to flatten groups of stylegrounds so that everything is all on one level."
+    convertApplyGroupsToFlattenedList = "Whether to flatten groups of stylegrounds so that everything is all on one level.",
+    onlySelectedRooms = "Whether to only copy stylegrounds visible in selected rooms."
   }
 }
+
+local function prune(styles, rooms, props)
+  local result = {}
+
+  for i, style in ipairs(styles) do
+    if style.__type == "apply" then
+      style.children = prune(style.children, rooms, {only = style.only or props.apply, exclude = style.exclude or props.exclude})
+      if #style.childen > 0 then
+        table.insert(result, style)
+      end
+    else
+      if $(rooms):exists(function(i, room)
+        return room_list.check(style.only or props.only or "*", room)
+          and not room_list.check(style.exclude or props.exclude or "", room)
+      end) then
+        table.insert(result, style)
+      end
+    end
+  end
+
+  return result
+end
 
 local function flatten(styles)
   local result = {}
@@ -46,6 +74,24 @@ function script.prerun(args)
   local stylesFg = utils.deepcopy(state.map.stylesFg)
   local stylesBg = utils.deepcopy(state.map.stylesBg)
 
+  if args.onlySelectedRooms then
+    local rooms = {}
+
+    local selectedItem, selectedItemType = state.getSelectedItem()
+    if selectedItemType == "room" then
+      table.insert(rooms, selectedItem.name)
+    elseif selectedItemType == "table" then
+      for i, item in selectedItem do
+        if item._type == "room" then
+          table.insert(rooms, item.name)
+        end
+      end
+    end
+
+    room_list.clear()
+    stylesFg = prune(stylesFg, rooms, {})
+    stylesBg = prune(stylesBg, rooms, {})
+  end
   if args.convertApplyGroupsToFlattenedList then
     stylesFg = flatten(stylesFg)
     stylesBg = flatten(stylesBg)
