@@ -11,6 +11,7 @@ local drawing = require("utils.drawing")
 local atlases = require("atlases")
 
 local parallaxExt = require("mods").requireFromPlugin("libraries.ext.parallax")
+local room_list = require("mods").requireFromPlugin("libraries.parsers.room_list")
 
 ---
 
@@ -28,10 +29,18 @@ preview.anim_start = nil
 
 function preview.toggle_bg()
   preview.bg_enabled = not preview.bg_enabled
+  if not preview.bg_enabled and not preview.fg_enabled then
+    parallaxExt.clear_all()
+    room_list.clear()
+  end
 end
 
 function preview.toggle_fg()
   preview.fg_enabled = not preview.fg_enabled
+  if not preview.bg_enabled and not preview.fg_enabled then
+    parallaxExt.clear_all()
+    room_list.clear()
+  end
 end
 
 function preview.toggle_snap()
@@ -85,7 +94,8 @@ function preview.renderParallax(state, selectedRoom, parallax)
 
   -- don't render parallaxes that don't belong in the selected room
   if selectedRoom then
-    if not parallaxExt.isInRoom(parallax, selectedRoom) then return end
+    if not room_list.check(parallax.only, selectedRoom)
+        or room_list.check(parallax.exclude, selectedRoom) then return end
   elseif (parallax.only and parallax.only ~= "*")
       or (parallax.exclude and parallax.exclude ~= "") then
     return
