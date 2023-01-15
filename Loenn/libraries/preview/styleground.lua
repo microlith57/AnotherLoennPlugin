@@ -106,7 +106,7 @@ function preview.renderParallax(state, selectedRoom, parallax)
 
   local color = {1, 1, 1, a}
   if parallax.color then
-    local success, r, g, b = utils.parseHexColor(parallax.color)
+    local success, r, g, b = utils.parseHexColor(tostring(parallax.color))
     if success then
       color[1] = r
       color[2] = g
