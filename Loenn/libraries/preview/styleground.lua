@@ -10,8 +10,8 @@ local utils = require("utils")
 local drawing = require("utils.drawing")
 local atlases = require("atlases")
 
-local parallaxExt = require("mods").requireFromPlugin("libraries.ext.parallax")
 local room_list = require("mods").requireFromPlugin("libraries.parsers.room_list")
+local fader_list = require("mods").requireFromPlugin("libraries.parsers.fader_list")
 
 ---
 
@@ -30,16 +30,16 @@ preview.anim_start = nil
 function preview.toggle_bg()
   preview.bg_enabled = not preview.bg_enabled
   if not preview.bg_enabled and not preview.fg_enabled then
-    parallaxExt.clear_all()
     room_list.clear()
+    fader_list.clear()
   end
 end
 
 function preview.toggle_fg()
   preview.fg_enabled = not preview.fg_enabled
   if not preview.bg_enabled and not preview.fg_enabled then
-    parallaxExt.clear_all()
     room_list.clear()
+    fader_list.clear()
   end
 end
 
@@ -92,17 +92,9 @@ function preview.renderParallax(state, selectedRoom, parallax)
   -- don't render invisible parallaxes
   if not tex or tex == "" then return end
 
-  -- don't render parallaxes that don't belong in the selected room
-  if selectedRoom then
-    if not room_list.check(parallax.only, selectedRoom)
-        or room_list.check(parallax.exclude, selectedRoom) then return end
-  elseif (parallax.only and parallax.only ~= "*")
-      or (parallax.exclude and parallax.exclude ~= "") then
-    return
-  end
-
   -- process faders; if the parallax is completely invisible, don't render it at all
-  a *= parallaxExt.getFade(parallax, cam_x + canvasWidth / 2, cam_y + canvasHeight / 2)
+  a *= fader_list.get(parallax.fadex or "", cam_x + canvasWidth / 2)
+     * fader_list.get(parallax.fadey or "", cam_y + canvasHeight / 2)
   if a <= 0 then return end
 
   if tex == "darkswamp"
@@ -190,15 +182,7 @@ end
 function preview.renderAll(state, stylegrounds, canvas, selectedRoom, props)
   for _, style in ipairs(stylegrounds) do
     local typ = utils.typeof(style)
-    if typ == "parallax" then
-      local copy = table.shallowcopy(props)
-
-      for k, v in pairs(style) do
-        copy[k] = v
-      end
-
-      preview.renderParallax(state, selectedRoom, copy)
-    elseif typ == "apply" and style.children then
+    if typ == "apply" and style.children then
       -- recurse over this group's children, passing on the properties of this group and upper-level groups
       local new_props = table.shallowcopy(props)
       for k, v in pairs(style) do
@@ -208,6 +192,23 @@ function preview.renderAll(state, stylegrounds, canvas, selectedRoom, props)
       end
 
       preview.renderAll(state, style.children, canvas, selectedRoom, new_props)
+    else
+      local copy = table.shallowcopy(props)
+      for k, v in pairs(style) do
+        copy[k] = v
+      end
+
+      if (selectedRoom
+          and room_list.check(copy.only, selectedRoom)
+          and not room_list.check(copy.exclude, selectedRoom))
+        or ((copy.only or "*") == "*"
+            and (copy.exclude or "") == "") then
+        if typ == "parallax" then
+          preview.renderParallax(state, selectedRoom, copy)
+        else
+          -- todo
+        end
+      end
     end
   end
 end
