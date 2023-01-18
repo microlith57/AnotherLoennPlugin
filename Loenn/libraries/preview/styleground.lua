@@ -5,13 +5,14 @@ if meta.version ~= version("0.4.3") and meta.version ~= version("0.0.0-dev") the
 end
 
 local viewportHandler = require("viewport_handler")
-local drawableSprite = require("structs.drawable_sprite")
 local utils = require("utils")
 local drawing = require("utils.drawing")
 local atlases = require("atlases")
 
 local room_list = require("mods").requireFromPlugin("libraries.parsers.room_list")
 local fader_list = require("mods").requireFromPlugin("libraries.parsers.fader_list")
+
+local backdrop_renderers = require("mods").requireFromPlugin("libraries.preview.backdrop_renderers")
 
 ---
 
@@ -81,33 +82,32 @@ end
 ---
 
 --[[
-  render the given parallax like celeste would
+  render a single styleground onto the given canvas
 ]]
-function preview.renderParallax(state, selectedRoom, parallax)
-  local a = parallax.alpha or 1
-  local tex = parallax.texture
-  local cam_x, cam_y = preview.previewPos(state)
-
-  -- don't render invisible parallaxes
-  if not tex or tex == "" then return end
-
-  -- process faders; if the parallax is completely invisible, don't render it at all
-  a *= fader_list.get(parallax.fadex or "", cam_x + canvasWidth / 2)
-     * fader_list.get(parallax.fadey or "", cam_y + canvasHeight / 2)
-  if a <= 0 then return end
-
-  if tex == "darkswamp"
-    or tex == "mist"
-    or tex == "northernlights"
-    or tex == "purplesunset"
-    or tex == "vignette" then
-    -- can't load Misc textures, so load a copy from Gameplay instead
-    tex = "bgs/microlith57/AnotherLoennPlugin/" .. tex
+function preview.render(seed, style, room, cam_x, cam_y, t)
+  local typ = utils.typeof(style)
+  local name = style._name
+  if typ ~= "parallax" then
+    if typ ~= "effect" or not backdrop_renderers[name] then return end
   end
 
+  if room then
+    if not room_list.check(style.only or "*", room)
+        or room_list.check(style.exclude or "", room) then return end
+  else
+    if (style.only and style.only ~= "*")
+       or (style.exclude and style.exclude ~= "") then return end
+  end
+
+  local a = style.alpha or 1
+  -- process faders; if the style is completely invisible, don't render it at all
+  a *= fader_list.get(style.fadex or "", cam_x + canvasWidth / 2)
+     * fader_list.get(style.fadey or "", cam_y + canvasHeight / 2)
+  if a <= 0 then return end
+
   local color = {1, 1, 1, a}
-  if parallax.color then
-    local success, r, g, b = utils.parseHexColor(tostring(parallax.color))
+  if style.color then
+    local success, r, g, b = utils.parseHexColor(tostring(style.color))
     if success then
       color[1] = r
       color[2] = g
@@ -115,70 +115,23 @@ function preview.renderParallax(state, selectedRoom, parallax)
     end
   end
 
-  local orig_blendmode = love.graphics.getBlendMode()
-  if parallax.blendmode == "additive" then
-    love.graphics.setBlendMode("add")
+  if typ == "parallax" then
+    backdrop_renderers.parallax(seed, style, cam_x, cam_y, color, t)
   else
-    love.graphics.setBlendMode("alpha")
+    backdrop_renderers[name](seed, style, cam_x, cam_y, color, t)
   end
-
-  -- get the texture from the atlas
-  local sprite = drawableSprite.fromTexture(tex, {
-    scaleX = (parallax.flipx and -1 or 1),
-    scaleY = (parallax.flipy and -1 or 1),
-    color = color,
-    depth = 0,
-    justificationX = 0.5, justificationY = 0.5, -- needed for flipping to work correctly
-  })
-
-  if sprite then
-    local width, height = sprite.meta.realWidth, sprite.meta.realHeight
-
-    -- handle positioning
-    local pos_x = (parallax.x or 0) - cam_x * (parallax.scrollx or 0)
-    local pos_y = (parallax.y or 0) - cam_y * (parallax.scrolly or 0)
-
-    if preview.anim_start then
-      if parallax.speedx then
-        pos_x += ((love.timer.getTime() - preview.anim_start) * parallax.speedx)
-      end
-      if parallax.speedy then
-        pos_y += ((love.timer.getTime() - preview.anim_start) * parallax.speedy)
-      end
-    end
-
-    local repeats_x, repeats_y = 0, 0
-
-    -- reposition looping stylegrounds, and figure out how many times to draw them
-    if parallax.loopx ~= false then
-      pos_x = math.fmod((math.fmod(pos_x, width) - width), width)
-      pos_x = math.ceil(pos_x)
-      repeats_x = math.ceil((canvasWidth - pos_x) / width) - 1
-    end
-    if parallax.loopy ~= false then
-      pos_y = math.fmod((math.fmod(pos_y, height) - height), height)
-      pos_y = math.ceil(pos_y)
-      repeats_y = math.ceil((canvasHeight - pos_y) / height) - 1
-    end
-
-    for i=0, repeats_x, 1 do
-      for j=0, repeats_y, 1 do
-        sprite.x = pos_x + (width / 2) + (i * width)
-        sprite.y = pos_y + (height / 2) + (j * height)
-        sprite:draw()
-      end
-    end
-  end
-
-  love.graphics.setBlendMode(orig_blendmode)
 end
-
----
 
 --[[
   render a styleground list onto the given canvas
 ]]
 function preview.renderAll(state, stylegrounds, canvas, selectedRoom, props)
+  local cam_x, cam_y = preview.previewPos(state)
+  local t = 0
+  if preview.anim_start then
+    t = love.timer.getTime() - preview.anim_start
+  end
+
   for _, style in ipairs(stylegrounds) do
     local typ = utils.typeof(style)
     if typ == "apply" and style.children then
@@ -196,18 +149,9 @@ function preview.renderAll(state, stylegrounds, canvas, selectedRoom, props)
       for k, v in pairs(style) do
         copy[k] = v
       end
+      local seed = tonumber(tostring(style):sub(10), 16)
 
-      if (selectedRoom
-          and room_list.check(copy.only, selectedRoom)
-          and not room_list.check(copy.exclude, selectedRoom))
-        or ((copy.only or "*") == "*"
-            and (copy.exclude or "") == "") then
-        if typ == "parallax" then
-          preview.renderParallax(state, selectedRoom, copy)
-        else
-          -- todo
-        end
-      end
+      preview.render(seed, copy, selectedRoom, cam_x, cam_y, t)
     end
   end
 end
