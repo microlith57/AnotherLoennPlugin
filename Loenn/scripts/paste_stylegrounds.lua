@@ -27,9 +27,17 @@ function script.prerun(args)
   if not success then return false end
 
   local function forward(data)
-    -- yolo
     state.map.stylesFg = fromClipboard.fg
     state.map.stylesBg = fromClipboard.bg
+  end
+
+  local function forward_noreplace(data)
+    for i, style in ipairs(fromClipboard.fg) do
+      table.insert(state.map.stylesFg, style)
+    end
+    for i, style in ipairs(fromClipboard.bg) do
+      table.insert(state.map.stylesBg, style)
+    end
   end
 
   local function backward(data)
@@ -37,9 +45,13 @@ function script.prerun(args)
     state.map.stylesBg = oldStylesBg
   end
 
-  forward()
-
-  return snapshot.create(script.name, {}, backward, forward)
+  if args.replaceExistingStylegrounds then
+    forward()
+    return snapshot.create(script.name, {}, backward, forward)
+  else
+    forward_noreplace()
+    return snapshot.create(script.name, {}, backward, forward_noreplace)
+  end
 end
 
 return script
