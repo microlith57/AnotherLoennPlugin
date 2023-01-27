@@ -1,6 +1,6 @@
 local meta = require("meta")
 local version = require("utils.version_parser")
-if meta.version ~= version("0.4.3") and meta.version ~= version("0.0.0-dev") then
+if meta.version ~= version("0.5.0") and meta.version ~= version("0.0.0-dev") then
   return {}
 end
 

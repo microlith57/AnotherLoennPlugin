@@ -17,9 +17,6 @@ local function mod(x, m)
   return math.fmod(math.fmod(x, m) + m, m)
 end
 
-require("logging").info(#big)
-require("logging").info(#small)
-
 function render_planets.render(seed, planets, cam_x, cam_y, color, t)
   if #big == 0 then
     for i, name in ipairs({"big00", "big01", "big02"}) do
