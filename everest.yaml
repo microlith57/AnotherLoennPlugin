@@ -1,5 +1,5 @@
 - Name: AnotherLoennPluginColorgrading
-  Version: 1.0.0
+  Version: 1.0.1
   Dependencies:
     - Name: AnotherLoennPlugin
-      Version: 1.1.5
+      Version: 1.1.6
