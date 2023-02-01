@@ -1,13 +1,17 @@
-local meta = require("meta")
-local version = require("utils.version_parser")
-if meta.version ~= version("0.5.1") and meta.version ~= version("0.0.0-dev") then
+local mods = require("mods")
+
+local settings = mods.requireFromPlugin("libraries.settings")
+if not settings.featureEnabled("small_room_resize") then
   return {}
 end
 
 local roomStruct = require("structs.room")
 local roomResizer = require("input_devices.room_resizer")
 local keyboardHelper = require("utils.keyboard")
-local configs = require("configs")
+
+---
+
+local modifier = settings.get("modifier", "ctrl", "small_room_resize")
 
 ---
 
@@ -18,7 +22,7 @@ end
 _orig_mousemoved = roomResizer.mousemoved
 function roomResizer.mousemoved(x, y, dx, dy, istouch)
   -- if not holding ctrl, use the default behaviour
-  if not keyboardHelper.modifierHeld(configs.editor.precisionModifier) then
+  if not keyboardHelper.modifierHeld(modifier) then
     return _orig_mousemoved(x, y, dx, dy, istouch)
   end
 

@@ -1,13 +1,21 @@
-local meta = require("meta")
-local version = require("utils.version_parser")
-if meta.version ~= version("0.5.1") and meta.version ~= version("0.0.0-dev") then
+local mods = require("mods")
+
+local settings = mods.requireFromPlugin("libraries.settings")
+if not settings.enabled() then
   return {}
 end
 
 local menubar = require("ui.menubar").menubar
 
-local stylegroundPreview = require("mods").requireFromPlugin("libraries.preview.styleground")
-local colorgradePreview = require("mods").requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
+local stylegroundPreview
+if settings.featureEnabled("styleground_preview") then
+  stylegroundPreview = mods.requireFromPlugin("libraries.preview.styleground")
+end
+
+local colorgradePreview
+if settings.featureEnabled("colorgrade_preview") then
+  colorgradePreview = mods.requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
+end
 
 ---
 
@@ -41,23 +49,26 @@ end
 ]]
 
 local viewMenu = $(menubar):find(menu -> menu[1] == "view")[2]
-local stylegroundMenu = submenu(viewMenu, "anotherloennplugin_preview_styleground")
 
-checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_bg",
-         stylegroundPreview.toggle_bg,
-         function() return stylegroundPreview.bg_enabled end)
+if styleground_preview then
+  local stylegroundMenu = submenu(viewMenu, "anotherloennplugin_preview_styleground")
 
-checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_fg",
-         stylegroundPreview.toggle_fg,
-         function() return stylegroundPreview.fg_enabled end)
+  checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_bg",
+          stylegroundPreview.toggle_bg,
+          function() return stylegroundPreview.bg_enabled end)
 
-checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_snap",
-         stylegroundPreview.toggle_snap,
-         function() return stylegroundPreview.snap_to_room end)
+  checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_fg",
+          stylegroundPreview.toggle_fg,
+          function() return stylegroundPreview.fg_enabled end)
 
-checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_anim",
-         stylegroundPreview.toggle_anim,
-         function() return stylegroundPreview.anim_start ~= nil end)
+  checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_snap",
+          stylegroundPreview.toggle_snap,
+          function() return stylegroundPreview.snap_to_room end)
+
+  checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_anim",
+          stylegroundPreview.toggle_anim,
+          function() return stylegroundPreview.anim_start ~= nil end)
+end
 
 if colorgradePreview then
   local logging = require("logging")

@@ -1,6 +1,7 @@
-local meta = require("meta")
-local version = require("utils.version_parser")
-if meta.version ~= version("0.5.1") and meta.version ~= version("0.0.0-dev") then
+local mods = require("mods")
+
+local settings = mods.requireFromPlugin("libraries.settings")
+if not settings.featureEnabled("room_mover") then
   return {}
 end
 

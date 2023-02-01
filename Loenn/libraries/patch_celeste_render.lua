@@ -1,13 +1,21 @@
-local meta = require("meta")
-local version = require("utils.version_parser")
-if meta.version ~= version("0.5.1") and meta.version ~= version("0.0.0-dev") then
+local mods = require("mods")
+
+local settings = mods.requireFromPlugin("libraries.settings")
+if not settings.enabled() then
   return {}
 end
 
 local celesteRender = require("celeste_render")
 
-local stylegroundPreview = require("mods").requireFromPlugin("libraries.preview.styleground")
-local colorgradePreview = require("mods").requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
+local stylegroundPreview
+if settings.featureEnabled("styleground_preview") then
+  stylegroundPreview = mods.requireFromPlugin("libraries.preview.styleground")
+end
+
+local colorgradePreview
+if settings.featureEnabled("colorgrade_preview") then
+  colorgradePreview = mods.requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
+end
 
 ---
 
@@ -20,20 +28,24 @@ end
 ]]
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
-  if state and colorgradePreview and colorgradePreview.enabled then
-    colorgradePreview.begin_preview(state)
-  end
-  if state and state.map and stylegroundPreview.bg_enabled then
-    stylegroundPreview.draw(state, false)
+  if state and state.map then
+    if colorgradePreview and colorgradePreview.enabled then
+      colorgradePreview.begin_preview(state)
+    end
+    if stylegroundPreview and stylegroundPreview.bg_enabled then
+      stylegroundPreview.draw(state, false)
+    end
   end
 
   _orig_drawMap(state)
 
-  if state and state.map and stylegroundPreview.fg_enabled then
-    stylegroundPreview.draw(state, true)
-  end
-  if state and colorgradePreview and colorgradePreview.enabled then
-    colorgradePreview.end_preview(state)
+  if state and state.map then
+    if stylegroundPreview and stylegroundPreview.fg_enabled then
+      stylegroundPreview.draw(state, true)
+    end
+    if colorgradePreview and colorgradePreview.enabled then
+      colorgradePreview.end_preview(state)
+    end
   end
 end
 
@@ -42,7 +54,7 @@ end
 ]]
 local _orig_getRoomBackgroundColor = celesteRender.getRoomBackgroundColor
 function celesteRender.getRoomBackgroundColor(room, selected)
-  if stylegroundPreview.bg_enabled then
+  if stylegroundPreview and stylegroundPreview.bg_enabled then
     return {0, 0, 0, 0}
   else
     return _orig_getRoomBackgroundColor(room, selected)
