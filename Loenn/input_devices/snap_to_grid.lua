@@ -76,64 +76,124 @@ end
 
 ---
 
--- todo: make these reversible; use correct snapshot type
-
 --[[
   snap each selected item to the grid individually
 ]]
 local function snapIndividual(room, layer, selections, dir)
-  local rerender = false
+  local dxs, dys = {}, {}
 
-  for i, sel in ipairs(selections) do
-    local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
-    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
-      rerender = true
+  local function forward()
+    local modified = false
+
+    for i, sel in ipairs(selections) do
+      local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
+      dxs[i], dys[i] = dx, dy
+
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+        modified = true
+      end
     end
+
+    return modified
   end
 
-  return rerender
+  local function backward()
+    local modified = false
+
+    for i, sel in ipairs(selections) do
+      local dx, dy = dxs[i], dxs[i]
+      if not dx or not dy then
+        break
+      end
+
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, -dx, -dy) then
+        modified = true
+      end
+    end
+
+    return modified
+  end
+
+  return forward, backward
 end
 
 --[[
   snap the first item selected to the grid, moving the others by the same amount
 ]]
 local function snapFirst(room, layer, selections, dir)
-  local rerender = false
+  local dx, dy = 0, 0
 
-  local sel = selections[1]
-  local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
-  for i, sel in ipairs(selections) do
-    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
-      rerender = true
+  local function forward()
+    local rerender = false
+
+    local sel = selections[1]
+    dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
+
+    for i, sel in ipairs(selections) do
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+        rerender = true
+      end
     end
+
+    return rerender
   end
 
-  return rerender
+  local function backward()
+    local rerender = false
+
+    for i, sel in ipairs(selections) do
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, -dx, -dy) then
+        rerender = true
+      end
+    end
+
+    return rerender
+  end
+
+  return forward, backward
 end
 
 --[[
   move the selected items so that their centre of mass is snapped to grid
 ]]
 local function snapCentroid(room, layer, selections, dir)
-  local sum_x = 0
-  local sum_y = 0
-  local n = 0
-  for i, sel in ipairs(selections) do
-    sum_x = sum_x + (sel.item and sel.item.x or sel.x)
-    sum_y = sum_y + (sel.item and sel.item.y or sel.y)
-    n = n + 1
-  end
+  local dx, dy = 0, 0
 
-  local rerender = false
-
-  dx, dy = getSnapDelta(math.floor((sum_x / n) + 0.5), math.floor((sum_y / n) + 0.5), dir)
-  for i, sel in ipairs(selections) do
-    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
-      rerender = true
+  local function forward()
+    local sum_x = 0
+    local sum_y = 0
+    local n = 0
+    for i, sel in ipairs(selections) do
+      sum_x = sum_x + (sel.item and sel.item.x or sel.x)
+      sum_y = sum_y + (sel.item and sel.item.y or sel.y)
+      n = n + 1
     end
+
+    local rerender = false
+
+    dx, dy = getSnapDelta(math.floor((sum_x / n) + 0.5), math.floor((sum_y / n) + 0.5), dir)
+    for i, sel in ipairs(selections) do
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+        rerender = true
+      end
+    end
+
+    return rerender
   end
 
-  return rerender
+  local function backward()
+    local rerender = false
+
+    for i, sel in ipairs(selections) do
+      if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, -dx, -dy) then
+        rerender = true
+      end
+    end
+
+    return rerender
+  end
+
+  return forward, backward
 end
 
 ---
@@ -169,17 +229,19 @@ local function snap(dir)
     return
   end
 
-  local function forward()
-    if snapMode == "individual" then
-      return snapIndividual(room, layer, selections, dir)
-    elseif snapMode == "first" then
-      return snapFirst(room, layer, selections, dir)
-    elseif snapMode == "centroid" then
-      return snapCentroid(room, layer, selections, dir)
-    end
+  local forward, backward
+
+  if snapMode == "individual" then
+    forward, backward = snapIndividual(room, layer, selections, dir)
+  elseif snapMode == "first" then
+    forward, backward = snapFirst(room, layer, selections, dir)
+  elseif snapMode == "centroid" then
+    forward, backward = snapCentroid(room, layer, selections, dir)
+  else
+    return -- unreachable
   end
 
-  local snapshot, redraw = snapshotUtils.roomLayerSnapshot(forward, room, layer, "Snap to grid")
+  local snapshot, redraw = snapshotUtils.roomLayerRevertableSnapshot(forward, backward, room, layer, "Snapped to grid")
 
   if redraw then
     history.addSnapshot(snapshot)
