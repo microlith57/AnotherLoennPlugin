@@ -76,6 +76,8 @@ end
 
 ---
 
+-- todo: make these reversible; use correct snapshot type
+
 --[[
   snap each selected item to the grid individually
 ]]
@@ -83,8 +85,10 @@ local function snapIndividual(room, layer, selections, dir)
   local rerender = false
 
   for i, sel in ipairs(selections) do
-    dx, dy = getSnapDelta(sel.x, sel.y, dir)
-    rerender = selectionItemUtils.moveSelection(room, layer, sel, dx, dy) or rerender
+    local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
+    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+      rerender = true
+    end
   end
 
   return rerender
@@ -96,9 +100,12 @@ end
 local function snapFirst(room, layer, selections, dir)
   local rerender = false
 
-  dx, dy = getSnapDelta(selections[1].x, selections[1].y, dir)
+  local sel = selections[1]
+  local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
   for i, sel in ipairs(selections) do
-    rerender = selectionItemUtils.moveSelection(room, layer, sel, dx, dy) or rerender
+    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+      rerender = true
+    end
   end
 
   return rerender
@@ -108,20 +115,22 @@ end
   move the selected items so that their centre of mass is snapped to grid
 ]]
 local function snapCentroid(room, layer, selections, dir)
-  local rerender = false
-
   local sum_x = 0
   local sum_y = 0
   local n = 0
   for i, sel in ipairs(selections) do
-    sum_x = sum_x + sel.x
-    sum_y = sum_y + sel.y
+    sum_x = sum_x + (sel.item and sel.item.x or sel.x)
+    sum_y = sum_y + (sel.item and sel.item.y or sel.y)
     n = n + 1
   end
 
+  local rerender = false
+
   dx, dy = getSnapDelta(math.floor((sum_x / n) + 0.5), math.floor((sum_y / n) + 0.5), dir)
   for i, sel in ipairs(selections) do
-    rerender = selectionItemUtils.moveSelection(room, layer, sel, dx, dy) or rerender
+    if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
+      rerender = true
+    end
   end
 
   return rerender
