@@ -168,10 +168,10 @@ local function snapCentroid(room, layer, selections, dir)
       sum_y = sum_y + (sel.item and sel.item.y or sel.y)
       n = n + 1
     end
+    dx, dy = getSnapDelta(math.floor((sum_x / n) + 0.5), math.floor((sum_y / n) + 0.5), dir)
 
     local rerender = false
 
-    dx, dy = getSnapDelta(math.floor((sum_x / n) + 0.5), math.floor((sum_y / n) + 0.5), dir)
     for i, sel in ipairs(selections) do
       if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
         rerender = true
