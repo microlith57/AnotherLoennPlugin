@@ -6,6 +6,9 @@ if not settings.enabled() then
 end
 
 local celesteRender = require("celeste_render")
+local inputDevice = require("input_device")
+local sceneHandler = require("scene_handler")
+local editorScene = require("scenes.editor")
 
 local stylegroundPreview
 if settings.featureEnabled("styleground_preview") then
@@ -17,10 +20,24 @@ if settings.featureEnabled("colorgrade_preview") then
   colorgradePreview = mods.requireFromPlugin("libraries.preview.colorgrade", "AnotherLoennPluginColorgrading")
 end
 
+local snap_to_grid
+if settings.featureEnabled("snap_to_grid") then
+  snap_to_grid = mods.requireFromPlugin("input_devices.snap_to_grid")
+end
+
+---
+
+function initial_setup()
+  if snap_to_grid then
+    inputDevice.newInputDevice(sceneHandler.getCurrentScene().inputDevices, snap_to_grid)
+  end
+end
+
 ---
 
 if celesteRender.___anotherLoennPlugin then
   celesteRender.___anotherLoennPlugin.unload()
+  celesteRender.___anotherLoennPlugin = {}
 end
 
 --[[
@@ -29,6 +46,11 @@ end
 local _orig_drawMap = celesteRender.drawMap
 function celesteRender.drawMap(state)
   if state and state.map then
+    if not celesteRender.___anotherLoennPlugin.initial_setup then
+      initial_setup()
+      celesteRender.___anotherLoennPlugin.initial_setup = true
+    end
+
     if colorgradePreview and colorgradePreview.enabled then
       colorgradePreview.begin_preview(state)
     end
