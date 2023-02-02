@@ -137,7 +137,7 @@ local function snapIndividual(room, layer, selections, dir)
     local modified = false
 
     for i, sel in ipairs(selections) do
-      local dx, dy = dxs[i], dxs[i]
+      local dx, dy = dxs[i], dys[i]
       if not dx or not dy then
         break
       end
