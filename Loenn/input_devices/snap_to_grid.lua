@@ -11,6 +11,9 @@ if snapMode ~= "individual" and snapMode ~= "first" and snapMode ~= "centroid" t
   snapMode = "individual"
 end
 
+local spacing_x = math.ceil(tonumber(settings.get("grid_spacing_x", 8, "snap_to_grid")) or 8)
+local spacing_y = math.ceil(tonumber(settings.get("grid_spacing_y", 8, "snap_to_grid")) or 8)
+
 ---
 
 local tools = require("tools")
@@ -51,16 +54,16 @@ function device.draw()
       local col = colors.roomBorderDefault
       love.graphics.setColor(col[1], col[2], col[3], 0.2)
 
-      local x_min = -(math.floor(viewport.x) % (8 * viewport.scale))
+      local x_min = -(math.floor(viewport.x) % (spacing_x * viewport.scale))
       local x_max = math.ceil(viewport.width)
-      local y_min = -(math.floor(viewport.y) % (8 * viewport.scale))
+      local y_min = -(math.floor(viewport.y) % (spacing_y * viewport.scale))
       local y_max = math.ceil(viewport.height)
 
-      for x = x_min, x_max, 8 * viewport.scale do
+      for x = x_min, x_max, spacing_x * viewport.scale do
         love.graphics.line(x, 0, x, viewport.height)
       end
 
-      for y = y_min, y_max, 8 * viewport.scale do
+      for y = y_min, y_max, spacing_y * viewport.scale do
         love.graphics.line(0, y, viewport.width, y)
       end
     end
@@ -78,32 +81,30 @@ end
   if a direction is specified, it will always be moved in that direction
 ]]
 local function getSnapDelta(x, y, dir)
-  -- todo: custom grid size & offset
-
-  local x_offset = x % 8
-  local y_offset = y % 8
+  local x_offset = x % spacing_x
+  local y_offset = y % spacing_y
 
   if dir == "left" then
     return -x_offset, 0
   elseif dir == "right" then
-    return (8 - x_offset) % 8, 0
+    return (spacing_x - x_offset) % spacing_x, 0
   elseif dir == "up" then
     return 0, -y_offset
   elseif dir == "down" then
-    return 0, (8 - y_offset) % 8
+    return 0, (spacing_y - y_offset) % spacing_y
   else
     local dx, dy = 0, 0
 
-    if x_offset <= (8 / 2) then
+    if x_offset <= (spacing_x / 2) then
       dx = -x_offset
     else
-      dx = (8 - x_offset) % 8
+      dx = (spacing_x - x_offset) % spacing_x
     end
 
-    if y_offset <= (8 / 2) then
+    if y_offset <= (spacing_y / 2) then
       dy = -y_offset
     else
-      dy = (8 - y_offset) % 8
+      dy = (spacing_y - y_offset) % spacing_y
     end
 
     return dx, dy
