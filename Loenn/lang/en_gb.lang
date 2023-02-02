@@ -7,4 +7,4 @@ ui.menubar.anotherloennplugin_preview_styleground_anim=Animate
 
 # room mover tool
 tools.name.anotherloennplugin_room_mover=Room Mover
-layers.name.anotherloennplugin_room_mover=Move Rooms
+layers.name.anotherloennplugin_move_rooms=Move Rooms

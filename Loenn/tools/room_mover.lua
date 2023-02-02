@@ -16,11 +16,11 @@ local snapshot = require("structs.snapshot")
 local tool = {
   _type = "tool",
   name = "anotherloennplugin_room_mover",
-  group = "anotherloennplugin_room_mover",
+  group = "placement_end",
   image = nil,
-  layer = "anotherloennplugin_room_mover",
+  layer = "anotherloennplugin_move_rooms",
   validLayers = {
-    "anotherloennplugin_room_mover"
+    "anotherloennplugin_move_rooms"
   }
 }
 
