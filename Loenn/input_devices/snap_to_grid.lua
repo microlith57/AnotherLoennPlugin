@@ -21,15 +21,51 @@ local hotkeyHandler = require("hotkey_handler")
 local history = require("history")
 local toolUtils = require("tool_utils")
 local snapshotUtils = require("snapshot_utils")
+local viewportHandler = require("viewport_handler")
+local drawing = require("utils.drawing")
+local colors = require("consts.colors")
 
 ---
 
 local device = {_enabled = true, _type = "device"}
 local mouse_x, mouse_y
 
--- function device.draw()
--- todo: render grid
--- end
+device.display_grid = false
+local function toggle_grid()
+  device.display_grid = not device.display_grid
+end
+
+function device.draw()
+  if not device.display_grid then
+    return
+  end
+
+  local viewport = viewportHandler.viewport
+
+  if viewport.scale < 1 then
+    return
+  end
+
+  drawing.callKeepOriginalColor(
+    function()
+      local col = colors.roomBorderDefault
+      love.graphics.setColor(col[1], col[2], col[3], 0.2)
+
+      local x_min = -(math.floor(viewport.x) % (8 * viewport.scale))
+      local x_max = math.ceil(viewport.width)
+      local y_min = -(math.floor(viewport.y) % (8 * viewport.scale))
+      local y_max = math.ceil(viewport.height)
+
+      for x = x_min, x_max, 8 * viewport.scale do
+        love.graphics.line(x, 0, x, viewport.height)
+      end
+
+      for y = y_min, y_max, 8 * viewport.scale do
+        love.graphics.line(0, y, viewport.width, y)
+      end
+    end
+  )
+end
 
 function device.mousemoved(x, y, dx, dy, istouch)
   mouse_x, mouse_y = x, y
@@ -296,11 +332,11 @@ hotkeyHandler.createAndRegisterHotkey(
   snapNeutral,
   gridSnapHotkeys
 )
--- hotkeyHandler.createAndRegisterHotkey(
---   settings.get("hotkey_toggle_grid", "ctrl + shift + g", "snap_to_grid"),
---   device.toggle_grid,
---   gridSnapHotkeys
--- )
+hotkeyHandler.createAndRegisterHotkey(
+  settings.get("hotkey_toggle_grid", "ctrl + shift + g", "snap_to_grid"),
+  toggle_grid,
+  gridSnapHotkeys
+)
 
 -- add the hotkeys
 local _orig_createHotkeyDevice = hotkeyHandler.createHotkeyDevice
