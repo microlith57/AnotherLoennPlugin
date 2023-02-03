@@ -4,6 +4,7 @@ This plugin adds:
 - a **styleground file picker** that works with both unzipped mods and the graphics dump
 - a **styleground preview** that lets you see what your parallaxes will look like
 - keybinds to **snap selected objects to a customisable grid**, and to **view that grid**
+- keybinds to **pan the view**, defaulting to <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
 - the ability to **resize rooms below 40×23** when holding a key (<kbd>ctrl</kbd> by default)
 - a tool to **move rooms** (even several at a time)
 - scripts (for use with [Lönn Scripts](https://gamebanana.com/tools/8050)) to **copy and paste stylegrounds** using the clipboard, so you can move them between maps, edit them in a text editor, or send them to others; also one to fix lightbeams placed in Ahorn
