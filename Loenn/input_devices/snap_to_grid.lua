@@ -71,6 +71,7 @@ function device.draw()
 end
 
 function device.mousemoved(x, y, dx, dy, istouch)
+  -- for later...
   mouse_x, mouse_y = x, y
 end
 
@@ -245,6 +246,7 @@ local function snap(dir)
 
   local layer = tools.currentTool.layer
   if layer ~= "entities" and layer ~= "triggers" and layer ~= "decalsFg" and layer ~= "decalsBg" then
+    -- this is probably tile selection or something, which we don't support
     return
   end
 
@@ -259,6 +261,7 @@ local function snap(dir)
     layer = l
     selections = sels
   end
+  -- this is why the mouse position was saved earlier
   tools.currentTool.mouseclicked(mouse_x, mouse_y, configs.editor.contextMenuButton, false, {})
   selectionUtils.getContextSelections = orig_getContextSelections
 

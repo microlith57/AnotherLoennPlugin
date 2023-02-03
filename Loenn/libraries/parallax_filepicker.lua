@@ -8,6 +8,7 @@ end
 local parallax = require("parallax")
 local utils = require("utils")
 
+-- todo: rework this to save the graphics dump path
 ---
 
 if parallax.___anotherLoennPlugin then
