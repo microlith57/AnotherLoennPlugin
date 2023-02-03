@@ -26,7 +26,7 @@ if settings.featureEnabled("snap_to_grid") then
 end
 
 local keyboard_pan
-if settings.featureEnabled("keyboard_pan", false) then
+if settings.featureEnabled("keyboard_pan") then
   keyboard_pan = mods.requireFromPlugin("input_devices.keyboard_pan")
 end
 
