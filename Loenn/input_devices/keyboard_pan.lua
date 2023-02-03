@@ -31,7 +31,7 @@ function device.update(dt)
   end
 
   local viewport = viewportHandler.viewport
-  local dx, dy = subpixel_x, subpixel_y
+  local dx, dy = 0, 0
 
   if keys.left and hotkeyStruct.hotkeyActive(keys.left) then
     dx -= speed * dt
