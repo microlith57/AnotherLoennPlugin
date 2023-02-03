@@ -14,11 +14,18 @@ local hotkeyStruct = require("structs.hotkey")
 ---
 
 local device = {_enabled = true, _type = "device"}
-local subpixel_x, subpixel_y = 0, 0
 local key_pressed_timer
 local keys = {}
 
+--[[
+  pan the viewport using the configured keys (wasd by default)
+
+  this checks key_pressed_timer to make sure the viewport actually has focus,
+  to (mostly) avoid panning while in textboxes.
+]]
 function device.update(dt)
+  -- only proceed if one of the keys has been pressed recently enough,
+  -- which means we probably have focus
   if not key_pressed_timer or key_pressed_timer > timer_max then
     return
   end
@@ -48,6 +55,7 @@ end
 ---
 
 local function callback()
+  -- we know we have focus now, so reset the timer
   key_pressed_timer = 0
 end
 
