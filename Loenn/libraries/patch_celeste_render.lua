@@ -25,11 +25,19 @@ if settings.featureEnabled("snap_to_grid") then
   snap_to_grid = mods.requireFromPlugin("input_devices.snap_to_grid")
 end
 
+local keyboard_pan
+if settings.featureEnabled("keyboard_pan", false) then
+  keyboard_pan = mods.requireFromPlugin("input_devices.keyboard_pan")
+end
+
 ---
 
 function initial_setup()
   if snap_to_grid then
     inputDevice.newInputDevice(sceneHandler.getCurrentScene().inputDevices, snap_to_grid)
+  end
+  if keyboard_pan then
+    inputDevice.newInputDevice(sceneHandler.getCurrentScene().inputDevices, keyboard_pan)
   end
 end
 
