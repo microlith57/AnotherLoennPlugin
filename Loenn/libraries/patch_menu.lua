@@ -50,7 +50,7 @@ end
 
 local viewMenu = $(menubar):find(menu -> menu[1] == "view")[2]
 
-if styleground_preview then
+if stylegroundPreview then
   local stylegroundMenu = submenu(viewMenu, "anotherloennplugin_preview_styleground")
 
   checkbox(stylegroundMenu, "anotherloennplugin_preview_styleground_bg",

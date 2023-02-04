@@ -1,9 +1,3 @@
-local meta = require("meta")
-local version = require("utils.version_parser")
-if meta.version ~= version("0.5.1") and meta.version ~= version("0.0.0-dev") then
-  return {}
-end
-
 local viewportHandler = require("viewport_handler")
 local utils = require("utils")
 local drawing = require("utils.drawing")
