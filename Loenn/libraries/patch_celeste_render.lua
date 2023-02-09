@@ -30,6 +30,11 @@ if settings.featureEnabled("keyboard_pan") then
   keyboard_pan = mods.requireFromPlugin("input_devices.keyboard_pan")
 end
 
+local coords_view
+if settings.featureEnabled("coords_view") then
+  coords_view = mods.requireFromPlugin("input_devices.coords_view")
+end
+
 ---
 
 function initial_setup()
@@ -38,6 +43,9 @@ function initial_setup()
   end
   if keyboard_pan then
     inputDevice.newInputDevice(sceneHandler.getCurrentScene().inputDevices, keyboard_pan)
+  end
+  if coords_view then
+    inputDevice.newInputDevice(sceneHandler.getCurrentScene().inputDevices, coords_view)
   end
 end
 
