@@ -25,6 +25,13 @@ local directions = {
   "spikesLeft"
 }
 
+local trigger_directions = {
+  "triggerSpikesUp",
+  "triggerSpikesRight",
+  "triggerSpikesDown",
+  "triggerSpikesLeft"
+}
+
 -- index -> direction mapping
 local directions_T = {
   ["spikesUp"] = 1,
@@ -33,10 +40,17 @@ local directions_T = {
   ["spikesLeft"] = 4
 }
 
+local trigger_directions_T = {
+  ["triggerSpikesUp"] = 1,
+  ["triggerSpikesRight"] = 2,
+  ["triggerSpikesDown"] = 3,
+  ["triggerSpikesLeft"] = 4
+}
+
 ---
 
 -- generic rotation function for any spike direction
-local function rotate(room, entity, direction)
+local function spike_rotate(room, entity, direction)
   local index = directions_T[entity._name]
   index = ((index + direction - 1) % 4) + 1
   entity._name = directions[index]
@@ -71,8 +85,44 @@ local function rotate(room, entity, direction)
   return true
 end
 
+-- generic rotation function for any trigger spike direction
+local function trigger_spike_rotate(room, entity, direction)
+  local index = trigger_directions_T[entity._name]
+  index = ((index + direction - 1) % 4) + 1
+  entity._name = trigger_directions[index]
+
+  local horizontal = entity._name == "triggerSpikesLeft" or entity._name == "triggerSpikesRight"
+  if horizontal then
+    -- rotating horizontal -> vertical
+    if entity.width then
+      entity.height = entity.width
+      entity.width = nil
+    end
+
+    if pivot_mode == "centroid" then
+      local offset = math.floor((entity.height / 2) / 8) * 8
+      entity.x += offset
+      entity.y -= offset
+    end
+  else
+    -- rotating vertical -> horizontal
+    if entity.height then
+      entity.width = entity.height
+      entity.height = nil
+    end
+
+    if pivot_mode == "centroid" then
+      local offset = math.floor((entity.width / 2) / 8) * 8
+      entity.y += offset
+      entity.x -= offset
+    end
+  end
+
+  return true
+end
+
 -- generic flip function for any spike direction
-local function flip(room, entity, horizontal, vertical)
+local function spike_flip(room, entity, horizontal, vertical)
   if horizontal then
     if entity._name == "spikesLeft" then
       entity._name = "spikesRight"
@@ -88,6 +138,29 @@ local function flip(room, entity, horizontal, vertical)
       entity._name = "spikesUp"
     end
   end
+
+  return true
+end
+
+-- generic flip function for any trigger spike direction
+local function trigger_spike_flip(room, entity, horizontal, vertical)
+  if horizontal then
+    if entity._name == "triggerSpikesLeft" then
+      entity._name = "triggerSpikesRight"
+    elseif entity._name == "triggerSpikesRight" then
+      entity._name = "triggerSpikesLeft"
+    end
+  end
+
+  if vertical then
+    if entity._name == "triggerSpikesUp" then
+      entity._name = "triggerSpikesDown"
+    elseif entity._name == "triggerSpikesDown" then
+      entity._name = "triggerSpikesUp"
+    end
+  end
+
+  return true
 end
 
 ---
@@ -107,7 +180,14 @@ function entities.rotateSelection(room, layer, selection, direction)
   for _, name in ipairs(directions) do
     local handler = entities.registeredEntities[name]
     if not handler.rotate then
-      handler.rotate = rotate
+      handler.rotate = spike_rotate
+    end
+  end
+
+  for _, name in ipairs(trigger_directions) do
+    local handler = entities.registeredEntities[name]
+    if not handler.rotate then
+      handler.rotate = trigger_spike_rotate
     end
   end
 
@@ -120,7 +200,14 @@ function entities.flipSelection(room, layer, selection, horizontal, vertical)
   for _, name in ipairs(directions) do
     local handler = entities.registeredEntities[name]
     if not handler.flip then
-      handler.flip = flip
+      handler.flip = spike_flip
+    end
+  end
+
+  for _, name in ipairs(trigger_directions) do
+    local handler = entities.registeredEntities[name]
+    if not handler.flip then
+      handler.flip = trigger_spike_flip
     end
   end
 
@@ -131,6 +218,16 @@ end
 entities.___anotherLoennPlugin = {
   unload = function()
     for _, name in ipairs(directions) do
+      local handler = entities.registeredEntities[name]
+      if handler.rotate == rotate then
+        handler.rotate = nil
+      end
+      if handler.flip == flip then
+        handler.flip = nil
+      end
+    end
+
+    for _, name in ipairs(trigger_directions) do
       local handler = entities.registeredEntities[name]
       if handler.rotate == rotate then
         handler.rotate = nil
