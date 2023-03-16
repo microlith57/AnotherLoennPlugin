@@ -2,7 +2,7 @@ local mods = require("mods")
 
 local settings = mods.requireFromPlugin("libraries.settings")
 if not settings.featureEnabled("room_mover") then
-  return {}
+  return nil -- not {}, because that would result in an empty tool
 end
 
 local viewportHandler = require("viewport_handler")
