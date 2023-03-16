@@ -14,4 +14,4 @@ This plugin adds:
 
 These features can be configured; see [the wiki](https://github.com/microlith57/AnotherLoennPlugin/wiki) for information.
 
-Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.5.2), to make sure it doesn't break things.
+Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.5.3), to make sure it doesn't break things.
