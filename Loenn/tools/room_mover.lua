@@ -31,8 +31,6 @@ local currentX, currentY = 0, 0
 ---
 
 local function moveRoom(room, orig_x, orig_y, dx, dy)
-  require("logging").info("moving "..room.name.." by "..dx..","..dy)
-
   room.x = math.floor((orig_x + dx) / 8) * 8
   room.y = math.floor((orig_y + dy) / 8) * 8
 
@@ -50,7 +48,6 @@ local function cancel(rooms)
     rooms[i] = nil
   end
 
-  require("logging").info("cancelled move")
   return any
 end
 
@@ -58,8 +55,6 @@ end
 
 function tool.mousepressed(x, y, _button, _istouch, _presses)
   currentX, currentY = viewportHandler.getMapCoordinates(x, y)
-
-  require("logging").info("mousepressed @ "..x..","..y)
 
   if #moving > 0 then
     cancel(moving)
@@ -103,7 +98,6 @@ function tool.mousepressed(x, y, _button, _istouch, _presses)
   end
 
   if #moving > 0 then
-    require("logging").info("began move")
     startX, startY = currentX, currentY
     return true
   else
@@ -114,8 +108,6 @@ end
 function tool.mousereleased(x, y, _button, _istouch, _presses)
   currentX, currentY = viewportHandler.getMapCoordinates(x, y)
   local dx, dy = currentX - startX, currentY - startY
-
-  require("logging").info("mousereleased @ "..x..","..y.."; δ="..dx..","..dy)
 
   if #moving == 0 then
     return false
@@ -159,7 +151,6 @@ function tool.mousereleased(x, y, _button, _istouch, _presses)
 
   if not modified then return false end
 
-  require("logging").info("committed move")
   history.addSnapshot(snapshot.create("Room move", data, backward, forward))
   return true
 end
@@ -181,7 +172,6 @@ function tool.mousemoved(x, y, _dx, _dy, _istouch)
 end
 
 function tool.editorMapTargetChanged()
-  -- tool.mousereleased(currentX, currentY)
   cancel(moving)
 end
 
