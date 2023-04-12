@@ -36,7 +36,7 @@ end
 function debugrc.request(endpoint, query)
   local res = req.send(debugrc.base_url() .. endpoint, query)
   if res then
-    return res.status == 200, res.body, res
+    return res.code == 200, res.body, res
   else
     return false, nil, nil
   end
