@@ -5,11 +5,12 @@ if not settings.featureEnabled("room_mover") then
   return nil -- not {}, because that would result in an empty tool
 end
 
-local viewportHandler = require("viewport_handler")
-local state = require("loaded_state")
 local utils = require("utils")
+local state = require("loaded_state")
+local configs = require("configs")
 local history = require("history")
 local snapshot = require("structs.snapshot")
+local viewportHandler = require("viewport_handler")
 
 ---
 
@@ -17,7 +18,6 @@ local tool = {
   _type = "tool",
   name = "anotherloennplugin_room_mover",
   group = "placement_end",
-  image = nil,
   layer = "anotherloennplugin_move_rooms",
   validLayers = {
     "anotherloennplugin_move_rooms"
@@ -53,7 +53,11 @@ end
 
 ---
 
-function tool.mousepressed(x, y, _button, _istouch, _presses)
+function tool.mousepressed(x, y, button, _istouch, _presses)
+  if button ~= configs.editor.toolActionButton then
+    return
+  end
+
   currentX, currentY = viewportHandler.getMapCoordinates(x, y)
 
   if #moving > 0 then
@@ -105,7 +109,11 @@ function tool.mousepressed(x, y, _button, _istouch, _presses)
   end
 end
 
-function tool.mousereleased(x, y, _button, _istouch, _presses)
+function tool.mousereleased(x, y, button, _istouch, _presses)
+  if button ~= configs.editor.toolActionButton then
+    return
+  end
+
   currentX, currentY = viewportHandler.getMapCoordinates(x, y)
   local dx, dy = currentX - startX, currentY - startY
 

@@ -1,7 +1,6 @@
 local mods = require("mods")
 local v = require("utils.version_parser")
 local meta = require("meta")
-local notifications = require("ui.notification")
 local config = require("utils.config")
 local utils = require("utils")
 
