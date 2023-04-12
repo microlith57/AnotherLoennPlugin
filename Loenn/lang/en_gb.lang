@@ -8,3 +8,8 @@ ui.menubar.anotherloennplugin_preview_styleground_anim=Animate
 # room mover tool
 tools.name.anotherloennplugin_room_mover=Room Mover
 layers.name.anotherloennplugin_move_rooms=Move Rooms
+
+# teleporter tool
+tools.name.anotherloennplugin_teleporter=Teleporter
+layers.name.anotherloennplugin_teleport_instant=Teleport
+layers.name.anotherloennplugin_teleport_respawn=Respawn and Teleport
