@@ -7,6 +7,7 @@ This plugin adds:
 - keybinds to **pan the view**, defaulting to <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
 - the ability to **resize rooms below 40×23** when holding a key (<kbd>ctrl</kbd> by default)
 - a tool to **move rooms** (even several at a time)
+- a tool to **teleport the player** using Everest's DebugRC interface
 - a **coordinate viewer** (<kbd>`</kbd> by default)
 - the ability to **rotate and flip spikes**
 - scripts (for use with [Lönn Scripts](https://gamebanana.com/tools/8050)) to:
