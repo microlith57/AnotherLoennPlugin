@@ -1,2 +1,6 @@
 - Name: AnotherLoennPlugin
   Version: 1.1.16
+  DLL: bin/AnotherLoennPlugin.dll
+  Dependencies:
+    - Name: Everest
+      Version: 1.3847.0
