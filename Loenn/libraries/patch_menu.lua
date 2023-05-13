@@ -73,7 +73,7 @@ end
 if colorgradePreview then
   local logging = require("logging")
   logging.warning("[AnotherLoennPlugin] ---")
-  logging.warning("[AnotherLoennPlugin] Colorgrade preview enabled!")
+  logging.warning("[AnotherLoennPlugin] Colorgrade preview enabled! This tampers with love2d drawing functions, so could cause side effects or performance issues!")
   logging.warning("[AnotherLoennPlugin] Any problems you experience should be reported to microlith57#4004, even if they appear to be unrelated.")
   logging.warning("[AnotherLoennPlugin] Before reporting anything, first try moving the AnotherLoennPluginColorgrading plugin out of your Mods folder!")
   logging.warning("[AnotherLoennPlugin] ---")

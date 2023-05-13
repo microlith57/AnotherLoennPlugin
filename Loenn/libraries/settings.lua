@@ -60,7 +60,7 @@ function extSettings.get(settingName, default, namespace)
   return value
 end
 
-local supportedLoennVersion = v("0.5.3")
+local supportedLoennVersion = v("0.6.0")
 local currentLoennVersion = meta.version
 
 function extSettings.enabled()

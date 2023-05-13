@@ -14,11 +14,13 @@ This plugin adds:
   - **copy and paste stylegrounds** using the clipboard, so you can move them between maps, edit them in a text editor, or send them to others;
   - **convert fillers into filler rooms**, for easier editing
   - **fix lightbeams placed in Ahorn**
-- a toggle to **disable the camera snapping to rooms when you select them**
-- an optional **experimental colourgrade preview**, which you should **only put in your mods folder if you're actively using it** and **could break even unrelated plugins very easily (!)**, available [here](https://github.com/microlith57/AnotherLoennPlugin/releases/tag/colorgrading-v1.0.0)
+
+It also supports the following experimental add-ons, which you should **only put in your mods folder if you're actively using them**, and **could break even unrelated plugins very easily (!)**:
+- a **brush mask**, in the edit menu, which lets you make tools only replace either air or ground, rather than both, available [here](https://github.com/microlith57/AnotherLoennPlugin/releases/tag/brushmask-v1.0.0)
+- a **colourgrade preview**, available [here](https://github.com/microlith57/AnotherLoennPlugin/releases/tag/colorgrading-v1.0.0)
 
 These features can be configured; see [the wiki](https://github.com/microlith57/AnotherLoennPlugin/wiki) for information.
 
-Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.5.3), to make sure it doesn't break things.
+Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.6.0), to make sure it doesn't break things.
 
 Some code in this repository is derived from [Lönn](https://github.com/CelestialCartographers/Loenn) under the MIT License.
