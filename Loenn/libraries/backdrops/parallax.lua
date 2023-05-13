@@ -20,7 +20,7 @@ function render_parallax.render(id, parallax, cam_x, cam_y, color, t)
     or tex == "northernlights"
     or tex == "purplesunset"
     or tex == "vignette" then
-    tex = "bgs/microlith57/AnotherLoennPlugin/obj/" .. tex
+    tex = "bgs/microlith57/AnotherLoennPlugin/" .. tex
   end
 
   -- get the texture from the atlas
