@@ -2,6 +2,28 @@ local mods = require("mods")
 
 local settings = mods.requireFromPlugin("libraries.settings")
 
+do
+  local v = require("utils.version_parser")
+  if v(settings.get("_config_version", "0.2.1")) < v("0.3.0") then
+    local user_edited = (
+      settings.get("hotkey_left",  "a", "keyboard_pan") ~= "a" or
+      settings.get("hotkey_right", "d", "keyboard_pan") ~= "d" or
+      settings.get("hotkey_up",    "w", "keyboard_pan") ~= "w" or
+      settings.get("hotkey_down",  "s", "keyboard_pan") ~= "s"
+    )
+
+    if not user_edited then
+      settings.set("hotkey_left",  "alt + a", "keyboard_pan")
+      settings.set("hotkey_right", "alt + d", "keyboard_pan")
+      settings.set("hotkey_up",    "alt + w", "keyboard_pan")
+      settings.set("hotkey_down",  "alt + s", "keyboard_pan")
+    end
+
+    -- stopgap measure pending better settings code
+    settings.set("_config_version", "0.3.0")
+  end
+end
+
 local speed = tonumber(settings.get("speed", 1024, "keyboard_pan")) or 1024
 local timer_max = tonumber(settings.get("time_after_each_keypress_to_allow_movement", 1, "keyboard_pan")) or 1
 
@@ -60,16 +82,16 @@ local function callback()
 end
 
 keys.left = hotkeyStruct.createHotkey(
-  settings.get("hotkey_left", "a", "keyboard_pan"),
+  settings.get("hotkey_left", "alt + a", "keyboard_pan"),
   callback)
 keys.right = hotkeyStruct.createHotkey(
-  settings.get("hotkey_right", "d", "keyboard_pan"),
+  settings.get("hotkey_right", "ctrl + d", "keyboard_pan"),
   callback)
 keys.up = hotkeyStruct.createHotkey(
-  settings.get("hotkey_up", "w", "keyboard_pan"),
+  settings.get("hotkey_up", "alt + w", "keyboard_pan"),
   callback)
 keys.down = hotkeyStruct.createHotkey(
-  settings.get("hotkey_down", "s", "keyboard_pan"),
+  settings.get("hotkey_down", "alt + s", "keyboard_pan"),
   callback)
 
 -- add the hotkeys
