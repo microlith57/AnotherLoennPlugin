@@ -91,11 +91,13 @@ end
   patch the getRoomBackgroundColor function to return transparency if there are stylegrounds behind (so they aren't covered up)
 ]]
 local _orig_getRoomBackgroundColor = celesteRender.getRoomBackgroundColor
-function celesteRender.getRoomBackgroundColor(room, selected)
-  if stylegroundPreview and stylegroundPreview.bg_enabled then
-    return {0, 0, 0, 0}
-  else
-    return _orig_getRoomBackgroundColor(room, selected)
+if stylegroundPreview then
+  function celesteRender.getRoomBackgroundColor(room, selected, state)
+    if stylegroundPreview and stylegroundPreview.bg_enabled then
+      return {0, 0, 0, 0}
+    else
+      return _orig_getRoomBackgroundColor(room, selected, state)
+    end
   end
 end
 
