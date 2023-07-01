@@ -1,3 +1,7 @@
+# texture browser
+ui.menubar.anotherloennplugin_texture_browser=Texture Browser
+ui.anotherloennplugin.texture_browser_window.window_title=Texture Browser
+
 # styleground preview
 ui.menubar.anotherloennplugin_preview_styleground=Stylegrounds
 ui.menubar.anotherloennplugin_preview_styleground_bg=Background

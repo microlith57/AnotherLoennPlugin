@@ -7,6 +7,11 @@ end
 
 local menubar = require("ui.menubar").menubar
 
+local textureBrowser
+if true then
+  textureBrowser = mods.requireFromPlugin("libraries.texture_browser")
+end
+
 local stylegroundPreview
 if settings.featureEnabled("styleground_preview") then
   stylegroundPreview = mods.requireFromPlugin("libraries.preview.styleground")
@@ -30,6 +35,16 @@ local function submenu(menu, lang)
   return item[2]
 end
 
+local function button(menu, lang, cb)
+  local item = $(menu):find(item -> item[1] == lang)
+  if not item then
+    item = {}
+    table.insert(menu, item)
+  end
+  item[1] = lang
+  item[2] = cb
+end
+
 local function checkbox(menu, lang, toggle, active)
   local item = $(menu):find(item -> item[1] == lang)
   if not item then
@@ -49,6 +64,10 @@ end
 ]]
 
 local viewMenu = $(menubar):find(menu -> menu[1] == "view")[2]
+
+
+button(viewMenu, "anotherloennplugin_texture_browser", textureBrowser.browseTextures)
+
 
 if stylegroundPreview then
   local stylegroundMenu = submenu(viewMenu, "anotherloennplugin_preview_styleground")
