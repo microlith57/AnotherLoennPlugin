@@ -16,7 +16,9 @@ local windowPersister = require("ui.window_postition_persister")
 local windowPersisterName = "alp_texture_browser"
 local windowPersisterNameDialog = "alp_texture_browser_dialog"
 
-local WINDOW_STATIC_HEIGHT = 640
+local WINDOW_STATIC_HEIGHT = 600
+local WINDOW_STATIC_WIDTH = math.round(WINDOW_STATIC_HEIGHT * 4 / 3)
+local MAX_MOD_NAME_WIDTH = 200
 
 ---
 
@@ -53,6 +55,8 @@ local function getTextureData()
     return textureCache
   end
 
+  local language = languageRegistry.getLanguage()
+
   local buf = {}
 
   for name, sprite in pairs(atlases.gameplay) do
@@ -65,7 +69,8 @@ local function getTextureData()
 
       local mod = ""
       if not sprite.internalFile then
-        mod = table.concat(sprite.associatedMods, ", ")
+        mod = mods.formatAssociatedMods(language, sprite.associatedMods)
+        mod = mod:sub(2, #mod - 1)
       end
 
       table.insert(buf, {name = name, sprite = sprite, mod = mod})
@@ -118,23 +123,27 @@ local function makeSearchRow(data)
   return searchRow
 end
 
-local function makeListRow()
+local function makeListRow(data)
   local children = {
     -- mod name
     uie.column {uie.label()}
       :with {
-        style = { padding = 2 }
+        style = { padding = 4 },
+        width = MAX_MOD_NAME_WIDTH,
+        clip = true
       },
     -- texture name
     uie.column {uie.label()}
       :with {
-        style = { padding = 2 }
+        style = { padding = 4 },
+        clip = true
       },
     -- resolution
     uie.column {uie.label()}
       :with {
-        style = { padding = 2 }
-      },
+        style = { padding = 4 }
+      }
+      :with(uiu.rightbound),
   }
 
   local li = uie.listItem(children[1])
@@ -143,42 +152,57 @@ local function makeListRow()
       style = {
         padding = 0,
         spacing = 0,
-        normalBG = {1,0,0,1}
       },
     }
   li:addChild(children[2])
   li:addChild(children[3])
 
+  uiu.hook(li, {
+    layoutLate = function(orig, self)
+      local widest = data.widest_modname_so_far
+      self.children[1].width = widest
+      self.children[2].realX = widest + 8
+      self.children[2].width = WINDOW_STATIC_WIDTH - widest - 16 - self.children[3].width
+      orig(self)
+    end
+  })
+
   return li
 end
 
 local function makeList(data)
-  -- local widest_modname_so_far = 0
+  data.widest_modname_so_far = 0
 
   local list = uie.magicList(
     getTextureData(),
     function(_, d, elem)
-      if not d then return elem or makeListRow() end
+      if not d then return elem or makeListRow(data) end
+      if not elem then elem = makeListRow(data) end
 
-      if not elem then
-        elem = uie.listItem(makeListRow())
-      end
       local width = d.sprite.realWidth or d.sprite.width or "?"
       local height = d.sprite.realHeight or d.sprite.height or "?"
 
-      local row = elem.children[1]
-      row.children[1].children[1].text = d.mod
-      row.children[2].children[1].text = d.name
-      row.children[3].children[1].text = width .. "×" .. height
+      elem.children[1].children[1].text = d.mod
+      elem.children[2].children[1].text = d.name
+      elem.children[3].children[1].text = width .. "×" .. height
+
+      local widest = data.widest_modname_so_far
+      if widest < MAX_MOD_NAME_WIDTH then
+        local mod_width = elem.children[1].children[1]:calcWidth()
+
+        if mod_width > widest then
+          widest = math.min(MAX_MOD_NAME_WIDTH, mod_width)
+          data.widest_modname_so_far = widest
+
+          if elem.owner then
+            elem.owner.layoutLate()
+          end
+        end
+      end
+      elem.children[1].width = widest
+      elem.children[2].realX = widest + 4
 
       elem.data = d
-
-      -- if not elem.label then
-      --   elem.label = uie.row { uie.label( d.name ) }
-      -- else
-      --   elem.label.
-      -- end
-
       return elem
     end,
     function(_, d)
@@ -212,7 +236,7 @@ local function makeMainRow(data)
   local mainRow = uie.row {
     (data.viewMode == "list") and makeList(data) or makeGrid(data)
   }:with {
-    width = math.round(WINDOW_STATIC_HEIGHT * (4/3)),
+    width = WINDOW_STATIC_WIDTH,
     height = WINDOW_STATIC_HEIGHT
   }
 
@@ -258,7 +282,7 @@ function textureBrowser.browseTextures(isDialog)
     uie.label("loading modded assets, this might take a while...")
   }
     :with {
-    width = math.round(WINDOW_STATIC_HEIGHT * (4/3)),
+    width = WINDOW_STATIC_WIDTH,
     height = WINDOW_STATIC_HEIGHT
   }
 
