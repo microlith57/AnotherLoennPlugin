@@ -12,6 +12,7 @@ local mods = require("mods")
 local languageRegistry = require("language_registry")
 local configs = require("configs")
 local atlases = require("atlases")
+local persistence = require("persistence")
 
 local windowPersister = require("ui.window_postition_persister")
 local windowPersisterName = "alp_texture_browser"
@@ -188,10 +189,12 @@ local function makeSearchRow(data)
     data.searchText,
     function(el, new, old)
       data.searchText = new
-      data.callbacks.filterList(text)
+      if data.callbacks.filterList then
+        data.callbacks.filterList(new)
+      end
     end
   )
-    :with { placeholder = "Search" }
+    :with { placeholder = "Search", enabled = false }
     :with(uiu.fillWidth(true))
 
   data.searchField = searchField
@@ -343,9 +346,6 @@ local function makeList(data)
     end,
     function(_, d)
       data.selected = d.index
-      print(data.selected)
-      _, res = utils.serialize(d, false)
-      print(res)
     end
   )
     :with(uiu.fillWidth)
@@ -358,11 +358,16 @@ local function makeList(data)
       },
       _magicList = true
     }
+  data.searchField.enabled = true
 
-  -- listWidgets.updateItems(list, items, data.selected)
+  listWidgets.updateItems(list, items, data.selected)
 
   function data.callbacks.filterList(text)
     listWidgets.updateItems(list, items, data.selected)
+
+    if not data.isDialog then
+      persistence["anotherloennplugin_texture_browser_search"] = text
+    end
   end
 
   local scrolled = uie.scrollbox(list)
@@ -412,7 +417,7 @@ end
 
 ---
 
-function textureBrowser.browseTextures(isDialog)
+function textureBrowser.browseTextures(isDialog, initialSearch)
   local language = languageRegistry.getLanguage()
   local windowTitle = tostring(language.ui.anotherloennplugin.texture_browser_window.window_title)
 
@@ -421,10 +426,15 @@ function textureBrowser.browseTextures(isDialog)
 
   ---
 
+  if not isDialog then
+    initialSearch = persistence["anotherloennplugin_texture_browser_search"]
+  end
+
   local data = {
     callbacks = {},
     viewMode = "list",
-    searchText = ""
+    searchText = initialSearch,
+    isDialog = isDialog
   }
 
   -- loading text
