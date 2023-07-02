@@ -39,6 +39,7 @@ local atlasLoadTask
 
 ---
 
+-- todo: if only showing vanilla assets, don't bother to call this (-> no loading screen)
 local function loadExternalAtlasIfNecessary()
   if externalAtlasLoaded or atlasLoadTask then return end
 
@@ -271,46 +272,48 @@ local function makeListRow(data)
   return li
 end
 
---[[ local function addSearchFieldHooks(list, searchField)
+local function addSearchFieldHooks(data, list, searchField)
   searchField:hook({
-      onKeyRelease = function(orig, self, key, ...)
-        local exitKey = configs.ui.searching.searchExitKey
-        local exitClearKey = configs.ui.searching.searchExitAndClearKey
+    onKeyRelease = function(orig, self, key, ...)
+      local exitKey = configs.ui.searching.searchExitKey
+      local exitClearKey = configs.ui.searching.searchExitAndClearKey
 
-        local nextResultKey = configs.ui.searching.searchNextResultKey
-        local previousResultKey = configs.ui.searching.searchPreviousResultKey
+      local nextResultKey = configs.ui.searching.searchNextResultKey
+      local previousResultKey = configs.ui.searching.searchPreviousResultKey
 
-        local magicList = list._magicList
-        local dataList = magicList and list.data or list.children
-
-        if key == exitClearKey then
-            self:setText("")
-            widgetUtils.focusMainEditor()
-
-        elseif key == exitKey then
-            widgetUtils.focusMainEditor()
-
-        elseif key == nextResultKey then
-            if list.selectedIndex < #dataList then
-                listWidgets.setSelection(list, list.selectedIndex + 1)
-            end
-
-        elseif key == previousResultKey then
-            if list.selectedIndex > 1 then
-                listWidgets.setSelection(list, list.selectedIndex - 1)
-            end
-
+      if key == exitClearKey then
+        if data.isDialog then
+          -- todo: close dialog and accept
         else
-            orig(self, key, ...)
+          self:setText("")
+          widgetUtils.focusMainEditor()
         end
+
+      elseif key == exitKey then
+        widgetUtils.focusMainEditor()
+
+      elseif key == nextResultKey then
+        if list.selectedIndex < #list.data then
+            listWidgets.setSelection(list, list.selectedIndex + 1)
+        end
+
+      elseif key == previousResultKey then
+        if list.selectedIndex > 1 then
+            listWidgets.setSelection(list, list.selectedIndex - 1)
+        end
+
+      else
+        orig(self, key, ...)
+      end
     end
   })
-end ]]
+end
 
 local function makeList(data)
   data.widest_modname_so_far = 0
 
   local items = getTextureData()
+  local searchField = data.searchField
 
   local list = uie.magicList(
     items,
@@ -350,7 +353,7 @@ local function makeList(data)
   )
     :with(uiu.fillWidth)
     :with {
-      searchField = data.searchField,
+      searchField = searchField,
       options = {
         searchScore = getScore,
         searchRawItem = true,
@@ -358,7 +361,8 @@ local function makeList(data)
       },
       _magicList = true
     }
-  data.searchField.enabled = true
+  searchField.enabled = true
+  addSearchFieldHooks(data, list, searchField)
 
   listWidgets.updateItems(list, items, data.selected)
 
