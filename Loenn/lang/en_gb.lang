@@ -1,6 +1,10 @@
+mods.AnotherLoennPlugin.name=Another Lönn Plugin
+mods.Celeste.name=Celeste
+
 # texture browser
 ui.menubar.anotherloennplugin_texture_browser=Texture Browser
 ui.anotherloennplugin.texture_browser_window.window_title=Texture Browser
+ui.anotherloennplugin.texture_browser_window.loading_assets=Loading modded assets, please wait...
 
 # styleground preview
 ui.menubar.anotherloennplugin_preview_styleground=Stylegrounds

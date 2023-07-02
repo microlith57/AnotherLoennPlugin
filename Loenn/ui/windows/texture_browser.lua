@@ -6,6 +6,7 @@ local widgetUtils = require("ui.widgets.utils")
 
 local utils = require("utils")
 local tasks = require("utils.tasks")
+local textSearching = require("utils.text_search")
 
 local mods = require("mods")
 local languageRegistry = require("language_registry")
@@ -16,9 +17,13 @@ local windowPersister = require("ui.window_postition_persister")
 local windowPersisterName = "alp_texture_browser"
 local windowPersisterNameDialog = "alp_texture_browser_dialog"
 
-local WINDOW_STATIC_HEIGHT = 600
-local WINDOW_STATIC_WIDTH = math.round(WINDOW_STATIC_HEIGHT * 4 / 3)
+local SCROLLBOX_STATIC_HEIGHT = 600
+local SCROLLBOX_STATIC_WIDTH = math.round(SCROLLBOX_STATIC_HEIGHT * 4 / 3)
 local MAX_MOD_NAME_WIDTH = 200
+
+local language = languageRegistry.getLanguage()
+
+local RESOLUTION_SEP = "×"
 
 ---
 
@@ -26,7 +31,7 @@ local textureBrowser = {}
 
 ---
 
-local textureCache = {}
+local textureListUnfiltered = {}
 local textureBrowserGroup = uie.group({})
 local externalAtlasLoaded = false
 local atlasLoadTask
@@ -51,11 +56,9 @@ local function loadExternalAtlasIfNecessary()
 end
 
 local function getTextureData()
-  if #textureCache > 0 then
-    return textureCache
+  if #textureListUnfiltered > 0 then
+    return textureListUnfiltered
   end
-
-  local language = languageRegistry.getLanguage()
 
   local buf = {}
 
@@ -67,13 +70,16 @@ local function getTextureData()
       and not (firstchar == 'b' and utils.startsWith(name, "bgs/microlith57/AnotherLoennPlugin"))
       then
 
-      local mod = ""
-      if not sprite.internalFile then
-        mod = mods.formatAssociatedMods(language, sprite.associatedMods)
-        mod = mod:sub(2, #mod - 1)
+      local mods = {}
+      if sprite.internalFile then
+        mods[1] = tostring(language.mods.Celeste.name)
+      else
+        for i, mod in ipairs(sprite.associatedMods) do
+          mods[i] = tostring(language.mods[mod].name._exists and language.mods[mod].name or mod)
+        end
       end
 
-      table.insert(buf, {name = name, sprite = sprite, mod = mod})
+      table.insert(buf, {name = name, sprite = sprite, associatedMods = mods})
 
     end
   end
@@ -83,30 +89,120 @@ local function getTextureData()
   end)
 
   for i, entry in ipairs(buf) do
-    textureCache[i] = {
+    textureListUnfiltered[i] = {
       index = i,
-      name = entry.name, sprite = entry.sprite,
-      mod = (entry.mod ~= '' and entry.mod or 'Celeste')
+      name = entry.name, sprite = entry.sprite, associatedMods = entry.associatedMods
     }
   end
 
-  return textureCache
+  return textureListUnfiltered
+end
+
+---
+
+local function getScore(item, searchParts, caseSensitive, fuzzy)
+  local totalScore = 0
+  local hasMatch = false
+
+  -- Always match with empty search
+  if #searchParts == 0 then
+    return math.huge
+  end
+
+  for _, part in ipairs(searchParts) do
+    local mode = part.mode
+
+    if mode == "name" then
+      local search = part.text
+      local text = item.name
+      local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
+
+      if score then
+        totalScore = totalScore + score
+        hasMatch = true
+      end
+
+    elseif mode == "modName" then
+      -- If we have additional search text it should search for entries within the given mod
+      local associatedMods = item.associatedMods
+      local searchModName = part.text
+      local search = part.additional
+      local text = item.name
+
+      if associatedMods then
+        for _, modName in ipairs(associatedMods) do
+          local modScore = textSearching.searchScore(modName, searchModName, caseSensitive, fuzzy)
+          local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
+
+          -- Only include the additional search if it matches
+          if modScore and (score or #search == 0) then
+            totalScore = totalScore + modScore + (score or 0)
+            hasMatch = true
+          end
+        end
+      end
+    end
+  end
+
+  if hasMatch then
+    return totalScore
+  end
+end
+
+local function prepareSearch(search)
+  local parts = {}
+  local searchStringParts = search:split("|")()
+
+  for _, searchPart in ipairs(searchStringParts) do
+    if utils.startsWith(searchPart, "@") then
+      -- First space or the end of the string, used to extract additional search terms
+      local spaceIndex = utils.findCharacter(searchPart, " ") or #searchPart + 1
+
+      table.insert(parts, {
+        mode = "modName",
+        text = string.sub(searchPart, 2, spaceIndex - 1),
+        additional = string.sub(searchPart, spaceIndex + 1)
+      })
+    else
+      table.insert(parts, {
+        mode = "name",
+        text = searchPart
+      })
+    end
+  end
+
+  -- Remove empty entries, just causes issues
+  for i = #parts, 1, -1 do
+    if #parts[i].text == 0 then
+      table.remove(parts, i)
+    end
+  end
+
+  return parts
 end
 
 ---
 
 local function makeSearchRow(data)
+  local searchField = uie.field(
+    data.searchText,
+    function(el, new, old)
+      data.searchText = new
+      data.callbacks.filterList(text)
+    end
+  )
+    :with { placeholder = "Search" }
+    :with(uiu.fillWidth(true))
+
+  data.searchField = searchField
+
   local searchRow = uie.row {
-    uie.field(
-      "",
-      function(text) data.callbacks.setSearch(text) end
-    )
-      :with { placeholder = "Search" }
-      :with(uiu.fillWidth(true)),
+      searchField,
 
     -- todo: make this a dropown menu with a list/grid toggle and a "collapse animations" toggle,
     -- todo:   the latter of which hides anything that ends in a string of numbers that aren't all 0
     -- todo:   (i guess by adding another requirement to the search)
+    -- todo: language-ify List & Grid
     uie.dropdown(
       {"List", "Grid"},
       function(_, mode) data.callbacks.setViewMode(mode == "List" and "list" or "grid") end
@@ -122,6 +218,8 @@ local function makeSearchRow(data)
 
   return searchRow
 end
+
+---
 
 local function makeListRow(data)
   local children = {
@@ -162,7 +260,7 @@ local function makeListRow(data)
       local widest = data.widest_modname_so_far
       self.children[1].width = widest
       self.children[2].realX = widest + 8
-      self.children[2].width = WINDOW_STATIC_WIDTH - widest - 16 - self.children[3].width
+      self.children[2].width = SCROLLBOX_STATIC_WIDTH - widest - 16 - self.children[3].width
       orig(self)
     end
   })
@@ -170,21 +268,59 @@ local function makeListRow(data)
   return li
 end
 
+--[[ local function addSearchFieldHooks(list, searchField)
+  searchField:hook({
+      onKeyRelease = function(orig, self, key, ...)
+        local exitKey = configs.ui.searching.searchExitKey
+        local exitClearKey = configs.ui.searching.searchExitAndClearKey
+
+        local nextResultKey = configs.ui.searching.searchNextResultKey
+        local previousResultKey = configs.ui.searching.searchPreviousResultKey
+
+        local magicList = list._magicList
+        local dataList = magicList and list.data or list.children
+
+        if key == exitClearKey then
+            self:setText("")
+            widgetUtils.focusMainEditor()
+
+        elseif key == exitKey then
+            widgetUtils.focusMainEditor()
+
+        elseif key == nextResultKey then
+            if list.selectedIndex < #dataList then
+                listWidgets.setSelection(list, list.selectedIndex + 1)
+            end
+
+        elseif key == previousResultKey then
+            if list.selectedIndex > 1 then
+                listWidgets.setSelection(list, list.selectedIndex - 1)
+            end
+
+        else
+            orig(self, key, ...)
+        end
+    end
+  })
+end ]]
+
 local function makeList(data)
   data.widest_modname_so_far = 0
 
-  local list = uie.magicList(
-    getTextureData(),
-    function(_, d, elem)
-      if not d then return elem or makeListRow(data) end
-      if not elem then elem = makeListRow(data) end
+  local items = getTextureData()
 
-      local width = d.sprite.realWidth or d.sprite.width or "?"
+  local list = uie.magicList(
+    items,
+    function(_, d, elem)
+      if not elem then elem = makeListRow(data) end
+      if not d then return elem end
+
+      local width  = d.sprite.realWidth  or d.sprite.width  or "?"
       local height = d.sprite.realHeight or d.sprite.height or "?"
 
-      elem.children[1].children[1].text = d.mod
+      elem.children[1].children[1].text = table.concat(d.associatedMods, ", ")
       elem.children[2].children[1].text = d.name
-      elem.children[3].children[1].text = width .. "×" .. height
+      elem.children[3].children[1].text = width .. RESOLUTION_SEP .. height
 
       local widest = data.widest_modname_so_far
       if widest < MAX_MOD_NAME_WIDTH then
@@ -213,12 +349,20 @@ local function makeList(data)
     end
   )
     :with(uiu.fillWidth)
+    :with {
+      searchField = data.searchField,
+      options = {
+        searchScore = getScore,
+        searchRawItem = true,
+        searchPreprocessor = prepareSearch
+      },
+      _magicList = true
+    }
 
-  if data.selected then
-    -- listWidgets.setSelection(list, data.selected, true)
-    list:setSelectedIndex(data.selected, false)
-    -- todo: scroll to selected
-    -- todo: make this still work with search
+  -- listWidgets.updateItems(list, items, data.selected)
+
+  function data.callbacks.filterList(text)
+    listWidgets.updateItems(list, items, data.selected)
   end
 
   local scrolled = uie.scrollbox(list)
@@ -228,16 +372,20 @@ local function makeList(data)
   return scrolled
 end
 
+---
+
 local function makeGrid(data)
   return uie.magicList({})
 end
+
+---
 
 local function makeMainRow(data)
   local mainRow = uie.row {
     (data.viewMode == "list") and makeList(data) or makeGrid(data)
   }:with {
-    width = WINDOW_STATIC_WIDTH,
-    height = WINDOW_STATIC_HEIGHT
+    width = SCROLLBOX_STATIC_WIDTH,
+    height = SCROLLBOX_STATIC_HEIGHT
   }
 
   function data.callbacks.setViewMode(mode)
@@ -276,23 +424,37 @@ function textureBrowser.browseTextures(isDialog)
   local data = {
     callbacks = {},
     viewMode = "list",
+    searchText = ""
   }
 
+  -- loading text
+  --
+  -- this will only be visible the first time the window is opened, as the rest of the time it is replaced during
+  -- the current frame
   local mainRowPlaceholder = uie.row {
-    uie.label("loading modded assets, this might take a while...")
+    uie.label(tostring(language.ui.anotherloennplugin.texture_browser_window.loading_assets))
   }
     :with {
-    width = WINDOW_STATIC_WIDTH,
-    height = WINDOW_STATIC_HEIGHT
-  }
+      width = SCROLLBOX_STATIC_WIDTH,
+      height = SCROLLBOX_STATIC_HEIGHT
+    }
 
+  uiu.hook(mainRowPlaceholder.children[1], {
+    layoutLate = function(orig, self)
+      self.realX = math.floor((self.parent.width - self.width) / 2)
+      self.realY = math.floor((self.parent.height - self.height) / 2)
+      orig(self)
+    end
+  })
+
+  -- main layout
   local layout = uie.column {
     makeSearchRow(data),
     mainRowPlaceholder,
     (isDialog and makeDialogRow(data) or nil)
   }
 
-  local function putMainRowInWindow()
+  local function replacePlaceholder()
     mainRowPlaceholder:removeSelf()
 
     local row = makeMainRow(data)
@@ -301,9 +463,9 @@ function textureBrowser.browseTextures(isDialog)
 
   loadExternalAtlasIfNecessary()
   if externalAtlasLoaded then
-    putMainRowInWindow()
+    replacePlaceholder()
   else
-    atlasLoadTask.callback = putMainRowInWindow
+    atlasLoadTask.callback = replacePlaceholder
   end
 
   local window = uie.window(windowTitle, layout)
