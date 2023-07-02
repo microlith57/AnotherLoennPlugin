@@ -90,11 +90,32 @@ local function getTextureData()
     return a.name < b.name
   end)
 
+  local current_anim = {}
+  local current_anim_basename
+
   for i, entry in ipairs(buf) do
-    textureListUnfiltered[i] = {
+    item = {
       index = i,
       name = entry.name, sprite = entry.sprite, associatedMods = entry.associatedMods
     }
+
+    local name = entry.name
+    local frame_str = name:match("[^%d](%d+)$")
+    if frame_str then
+      local basename = name:sub(1, #name - #frame_str)
+      item.basename = basename
+      item.frame = tonumber(frame_str)
+
+      if current_anim_basename ~= basename then
+        current_anim = {}
+        current_anim_basename = basename
+      end
+
+      current_anim[item.frame] = item
+      item.anim = current_anim
+    end
+
+    textureListUnfiltered[i] = item
   end
 
   return textureListUnfiltered
@@ -348,7 +369,7 @@ local function makeList(data)
       return elem
     end,
     function(_, d)
-      data.selected = d.index
+      data.selected = d
     end
   )
     :with(uiu.fillWidth)
@@ -373,6 +394,26 @@ local function makeList(data)
       persistence["anotherloennplugin_texture_browser_search"] = text
     end
   end
+
+  uiu.hook(list, {
+    onKeyPress = function(orig, self, key)
+      if not data.selected or not data.selected.name then return orig(self) end
+
+      local hotkeyModifierHeld = false
+
+      if love.system.getOS == "OS X" then
+          hotkeyModifierHeld = love.keyboard.isDown("rgui", "lgui")
+      else
+          hotkeyModifierHeld = love.keyboard.isDown("rctrl", "lctrl")
+      end
+
+      if hotkeyModifierHeld and key == "c" then
+        love.system.setClipboardText(data.selected.name)
+      end
+
+      return orig(self, key)
+    end
+  })
 
   local scrolled = uie.scrollbox(list)
     :with(uiu.fillWidth)
