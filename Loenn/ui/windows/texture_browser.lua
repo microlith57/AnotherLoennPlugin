@@ -173,7 +173,6 @@ local function cacheDependencyModNames()
   end
 end
 
--- todo: doesn't seem to work; diagnose
 local function dependencyIntersect(mods)
   local depended = false
 
@@ -460,11 +459,11 @@ local function makeList(data)
     function(_, d)
       data.selected = d
 
-      local tmp = d.anim
-      d.anim = d.anim and true or nil
-      local _, a = utils.serialize(d, false)
-      print(a)
-      d.anim = tmp
+      -- local tmp = d.anim
+      -- d.anim = d.anim and true or nil
+      -- local _, a = utils.serialize(d, false)
+      -- print(a)
+      -- d.anim = tmp
     end
   )
     :with(uiu.fillWidth)
