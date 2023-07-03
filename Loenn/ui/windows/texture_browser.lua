@@ -11,9 +11,10 @@ local textSearching = require("utils.text_search")
 local mods = require("mods")
 local state = require("loaded_state")
 local languageRegistry = require("language_registry")
-local configs = require("configs")
 local atlases = require("atlases")
+local configs = require("configs")
 local persistence = require("persistence")
+local logging = require("logging")
 
 local windowPersister = require("ui.window_postition_persister")
 local windowPersisterName = "alp_texture_browser"
@@ -51,7 +52,12 @@ local function loadExternalAtlasIfNecessary()
   end
 
   atlasLoadTask = tasks.newTask(function()
+    local t1 = love.timer.getTime()
     atlases.loadExternalAtlas("Gameplay")
+    local t2 = love.timer.getTime()
+
+    logging.info("[AnotherLoennPlugin] loading external gameplay atlas took " .. math.ceil((t2 - t1) * 1000) .. "ms")
+
     externalAtlasLoaded = true
     atlasLoadTask = nil
   end)
@@ -147,6 +153,8 @@ local function getTextureData()
 
     textureListUnfiltered[i] = item
   end
+
+  logging.info("[AnotherLoennPlugin] loaded " .. #textureListUnfiltered .. " atlas entries")
 
   return textureListUnfiltered
 end
@@ -294,6 +302,21 @@ end
 
 ---
 
+local function textureTooltip()
+  return uie.group.panel {
+    uie.label("awawa")
+  }
+    :with {
+      interactive = -2,
+      updateHidden = true
+    }
+    -- :hook {
+    --   update = updateTooltip
+    -- }
+end
+
+---
+
 local function makeSearchRow(data)
   local searchField = uie.field(
     data.searchText,
@@ -388,8 +411,8 @@ local function addSearchFieldHooks(data, list, searchField)
       local previousResultKey = configs.ui.searching.searchPreviousResultKey
 
       if key == exitClearKey then
-        if data.isDialog then
-          -- todo: close dialog and accept
+        if data.callbacks.ok then
+          data.callbacks.ok()
         else
           self:setText("")
           widgetUtils.focusMainEditor()
@@ -574,16 +597,19 @@ end
 
 ---
 
-function textureBrowser.browseTextures(isDialog, initialSearch)
+function textureBrowser.browseTextures(dialog)
   local language = languageRegistry.getLanguage()
   local windowTitle = tostring(language.ui.anotherloennplugin.texture_browser_window.window_title)
 
-  local persisterName = isDialog and windowPersisterNameDialog or windowPersisterName
+  local persisterName = dialog and windowPersisterNameDialog or windowPersisterName
   local windowCloseCallback = windowPersister.getWindowCloseCallback(persisterName)
 
   ---
 
-  if not isDialog then
+  local initialSearch
+  if dialog then
+    initialSearch = dialog.initialSearch or ""
+  else
     initialSearch = persistence["anotherloennplugin_texture_browser_search"]
   end
 
@@ -591,7 +617,8 @@ function textureBrowser.browseTextures(isDialog, initialSearch)
     callbacks = {},
     viewMode = "list",
     searchText = initialSearch,
-    isDialog = isDialog
+    isDialog = dialog ~= nil,
+    collapseMultiframe = true
   }
 
   -- loading text
@@ -618,7 +645,7 @@ function textureBrowser.browseTextures(isDialog, initialSearch)
   local layout = uie.column {
     makeSearchRow(data),
     mainRowPlaceholder,
-    (isDialog and makeDialogRow(data) or nil)
+    ((dialog and dialog.callback and makeDialogRow(data)) or nil)
   }
 
   local function replacePlaceholder()
@@ -638,11 +665,21 @@ function textureBrowser.browseTextures(isDialog, initialSearch)
   local window = uie.window(windowTitle, layout)
   window:reflow()
 
+  data.callbacks.ok = dialog and dialog.callback and function()
+    window:removeSelf()
+    dialog.callback(data.selected)
+  end
+
   ---
 
   windowPersister.trackWindow(persisterName, window)
   textureBrowserGroup.parent:addChild(window)
   widgetUtils.addWindowCloseButton(window, windowCloseCallback)
+
+  if not textureTooltip then
+    textureTooltip = makeTooltip()
+    textureBrowserGroup.parent:addChild(textureTooltip)
+  end
 
   return window
 end
