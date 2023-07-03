@@ -103,15 +103,45 @@ local function getTextureData()
     local frame_str = name:match("[^%d](%d+)$")
     if frame_str then
       local basename = name:sub(1, #name - #frame_str)
-      item.basename = basename
       item.frame = tonumber(frame_str)
 
       if current_anim_basename ~= basename then
-        current_anim = {}
+        current_anim = {
+          basename = basename
+        }
         current_anim_basename = basename
+        item.firstFrame = true
+      else
+        item.firstFrame = false
+
+        if not current_anim.resolutionInconsistent then
+          local first = current_anim[1]
+          if first and first.sprite then
+            -- check to see if resolutions are the same
+            local f_width  = first.sprite.realWidth  or first.sprite.width  or "?"
+            local f_height = first.sprite.realHeight or first.sprite.height or "?"
+            local i_width  = item.sprite.realWidth   or item.sprite.width   or "?"
+            local i_height = item.sprite.realHeight  or item.sprite.height  or "?"
+
+            if f_width ~= i_width or f_height ~= i_height then
+              -- they aren't, so mark for later
+              current_anim.resolutionInconsistent = true
+            end
+          else
+            -- first frame is bad, something's definitely wrong; might as well blame this
+            current_anim.numberingWrong = true
+          end
+        end
       end
 
-      current_anim[item.frame] = item
+      if not current_anim.numberingWrong and item.frame ~= #current_anim then
+        -- this frame is frame n, so should go in slot n+1 in the animation (due to lua indexing)
+        -- but this won't be the case with table.insert, so the frames must be wrong somehow (start at nonzero, have gaps, or wrong order)
+        -- so, mark this in the anim
+        current_anim.numberingWrong = true
+      end
+      table.insert(current_anim, item)
+
       item.anim = current_anim
     end
 
@@ -160,10 +190,18 @@ local function getScore(item, searchParts, caseSensitive, fuzzy)
   local totalScore = 0
   local hasMatch = false
 
+  item.collapsed = nil
+  item.copyText = nil
+
   if dependencyNamesSet and not item.sprite.internalFile then
     if not dependencyIntersect(item.sprite.associatedMods) then
-      return 0
+      return
     end
+  end
+
+  if item.anim and not item.firstFrame and not item.anim.numberingWrong and not item.anim.resolutionInconsistent then return end
+  if item.anim then
+
   end
 
   -- Always match with empty search
@@ -241,6 +279,12 @@ local function prepareSearch(search)
   end
 
   return parts
+end
+
+local function shouldCollapse(data, item)
+  return data.collapseMultiframe
+         and item.anim and #item.anim > 1
+         and not item.anim.numberingWrong and not item.anim.resolutionInconsistent
 end
 
 ---
@@ -381,9 +425,18 @@ local function makeList(data)
       local width  = d.sprite.realWidth  or d.sprite.width  or "?"
       local height = d.sprite.realHeight or d.sprite.height or "?"
 
-      elem.children[1].children[1].text = table.concat(d.associatedMods, ", ")
-      elem.children[2].children[1].text = d.name
-      elem.children[3].children[1].text = width .. RESOLUTION_SEP .. height
+      local col_mods = table.concat(d.associatedMods, ", ")
+      local col_name = d.name
+      local col_res = width .. RESOLUTION_SEP .. height
+
+      if shouldCollapse(data, d) then
+        col_name = d.anim.basename .. "*"
+        col_res = #d.anim .. ",  " .. col_res
+      end
+
+      elem.children[1].children[1].text = col_mods
+      elem.children[2].children[1].text = col_name
+      elem.children[3].children[1].text = col_res
 
       local widest = data.widest_modname_so_far
       if widest < MAX_MOD_NAME_WIDTH then
@@ -406,6 +459,12 @@ local function makeList(data)
     end,
     function(_, d)
       data.selected = d
+
+      local tmp = d.anim
+      d.anim = d.anim and true or nil
+      local _, a = utils.serialize(d, false)
+      print(a)
+      d.anim = tmp
     end
   )
     :with(uiu.fillWidth)
@@ -438,7 +497,8 @@ local function makeList(data)
 
   uiu.hook(list, {
     onKeyPress = function(orig, self, key)
-      if not data.selected or not data.selected.name then return orig(self) end
+      local d = data.selected
+      if not d or not d.name then return orig(self) end
 
       local hotkeyModifierHeld = false
 
@@ -449,7 +509,13 @@ local function makeList(data)
       end
 
       if hotkeyModifierHeld and key == "c" then
-        love.system.setClipboardText(data.selected.name)
+        local copyText = d.name
+
+        if shouldCollapse(data, d) then
+          copyText = d.anim.basename
+        end
+
+        love.system.setClipboardText(copyText)
       end
 
       return orig(self, key)
