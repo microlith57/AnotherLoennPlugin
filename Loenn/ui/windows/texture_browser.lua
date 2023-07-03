@@ -40,7 +40,6 @@ local atlasLoadTask
 
 ---
 
--- todo: if only showing vanilla assets, don't bother to call this (-> no loading screen)
 local function loadExternalAtlasIfNecessary()
   if externalAtlasLoaded or atlasLoadTask then return end
 
@@ -277,9 +276,6 @@ local function makeSearchRow(data)
   }
     :with(uiu.fillWidth)
     :with { style = { padding = 4 } }
-
-  -- todo implement searching
-  -- todo implement up/down arrows, esc, enter (see searchFieldKeyRelease)
 
   return searchRow
 end
