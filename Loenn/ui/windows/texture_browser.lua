@@ -385,18 +385,17 @@ local function makeListRow(data)
         spacing = 0,
       },
     }
+    :hook {
+      layoutLate = function(orig, self)
+        local widest = data.widest_modname_so_far
+        self.children[1].width = widest
+        self.children[2].realX = widest + 8
+        self.children[2].width = SCROLLBOX_STATIC_WIDTH - widest - 16 - self.children[3].width
+        orig(self)
+      end
+    }
   li:addChild(children[2])
   li:addChild(children[3])
-
-  uiu.hook(li, {
-    layoutLate = function(orig, self)
-      local widest = data.widest_modname_so_far
-      self.children[1].width = widest
-      self.children[2].realX = widest + 8
-      self.children[2].width = SCROLLBOX_STATIC_WIDTH - widest - 16 - self.children[3].width
-      orig(self)
-    end
-  })
 
   return li
 end
@@ -509,6 +508,33 @@ local function makeList(data)
         listWidgets.updateItems(self, items, data.selected)
       end
     }
+    :hook {
+      onKeyPress = function(orig, self, key)
+        local d = data.selected
+        if not d or not d.name then return orig(self) end
+
+        local hotkeyModifierHeld = false
+
+        if love.system.getOS == "OS X" then
+            hotkeyModifierHeld = love.keyboard.isDown("rgui", "lgui")
+        else
+            hotkeyModifierHeld = love.keyboard.isDown("rctrl", "lctrl")
+        end
+
+        if hotkeyModifierHeld and key == "c" then
+          local copyText = d.name
+
+          if shouldCollapse(data, d) then
+            copyText = d.anim.basename
+          end
+
+          love.system.setClipboardText(copyText)
+        end
+
+        return orig(self, key)
+      end
+    }
+
   searchField.enabled = true
   addSearchFieldHooks(data, list, searchField)
 
@@ -522,33 +548,6 @@ local function makeList(data)
       persistence["anotherloennplugin_texture_browser_search"] = text
     end
   end
-
-  uiu.hook(list, {
-    onKeyPress = function(orig, self, key)
-      local d = data.selected
-      if not d or not d.name then return orig(self) end
-
-      local hotkeyModifierHeld = false
-
-      if love.system.getOS == "OS X" then
-          hotkeyModifierHeld = love.keyboard.isDown("rgui", "lgui")
-      else
-          hotkeyModifierHeld = love.keyboard.isDown("rctrl", "lctrl")
-      end
-
-      if hotkeyModifierHeld and key == "c" then
-        local copyText = d.name
-
-        if shouldCollapse(data, d) then
-          copyText = d.anim.basename
-        end
-
-        love.system.setClipboardText(copyText)
-      end
-
-      return orig(self, key)
-    end
-  })
 
   local scrolled = uie.scrollbox(list)
     :with(uiu.fillWidth)
