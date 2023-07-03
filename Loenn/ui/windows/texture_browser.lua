@@ -185,67 +185,73 @@ local function dependencyIntersect(mods)
   return false
 end
 
-local function getScore(item, searchParts, caseSensitive, fuzzy)
-  local totalScore = 0
-  local hasMatch = false
+local function getGetScore(data)
+  local function getScore(item, searchParts, caseSensitive, fuzzy)
+    local totalScore = 0
+    local hasMatch = false
 
-  item.collapsed = nil
-  item.copyText = nil
+    item.collapsed = nil
+    item.copyText = nil
 
-  if dependencyNamesSet and not item.sprite.internalFile then
-    if not dependencyIntersect(item.sprite.associatedMods) then
+    if dependencyNamesSet
+      and not item.sprite.internalFile
+      and not dependencyIntersect(item.sprite.associatedMods) then
+
       return
     end
-  end
 
-  if item.anim and not item.firstFrame and not item.anim.numberingWrong and not item.anim.resolutionInconsistent then return end
-  if item.anim then
+    if data.collapseMultiframe
+      and item.anim and not item.firstFrame
+      and not item.anim.numberingWrong and not item.anim.resolutionInconsistent then
 
-  end
+      return
+    end
 
-  -- Always match with empty search
-  if #searchParts == 0 then
-    return math.huge
-  end
+    -- Always match with empty search
+    if #searchParts == 0 then
+      return math.huge
+    end
 
-  for _, part in ipairs(searchParts) do
-    local mode = part.mode
+    for _, part in ipairs(searchParts) do
+      local mode = part.mode
 
-    if mode == "name" then
-      local search = part.text
-      local text = item.name
-      local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
+      if mode == "name" then
+        local search = part.text
+        local text = item.name
+        local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
 
-      if score then
-        totalScore = totalScore + score
-        hasMatch = true
-      end
+        if score then
+          totalScore = totalScore + score
+          hasMatch = true
+        end
 
-    elseif mode == "modName" then
-      -- If we have additional search text it should search for entries within the given mod
-      local associatedMods = item.associatedMods
-      local searchModName = part.text
-      local search = part.additional
-      local text = item.name
+      elseif mode == "modName" then
+        -- If we have additional search text it should search for entries within the given mod
+        local associatedMods = item.associatedMods
+        local searchModName = part.text
+        local search = part.additional
+        local text = item.name
 
-      if associatedMods then
-        for _, modName in ipairs(associatedMods) do
-          local modScore = textSearching.searchScore(modName, searchModName, caseSensitive, fuzzy)
-          local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
+        if associatedMods then
+          for _, modName in ipairs(associatedMods) do
+            local modScore = textSearching.searchScore(modName, searchModName, caseSensitive, fuzzy)
+            local score = textSearching.searchScore(text, search, caseSensitive, fuzzy)
 
-          -- Only include the additional search if it matches
-          if modScore and (score or #search == 0) then
-            totalScore = totalScore + modScore + (score or 0)
-            hasMatch = true
+            -- Only include the additional search if it matches
+            if modScore and (score or #search == 0) then
+              totalScore = totalScore + modScore + (score or 0)
+              hasMatch = true
+            end
           end
         end
       end
     end
-  end
 
-  if hasMatch then
-    return totalScore
+    if hasMatch then
+      return totalScore
+    end
   end
+  return getScore
 end
 
 local function prepareSearch(search)
@@ -470,7 +476,7 @@ local function makeList(data)
     :with {
       searchField = searchField,
       options = {
-        searchScore = getScore,
+        searchScore = getGetScore(data),
         searchRawItem = true,
         searchPreprocessor = prepareSearch
       },
