@@ -9,6 +9,7 @@ local tasks = require("utils.tasks")
 local textSearching = require("utils.text_search")
 
 local mods = require("mods")
+local state = require("loaded_state")
 local languageRegistry = require("language_registry")
 local configs = require("configs")
 local atlases = require("atlases")
@@ -123,9 +124,48 @@ end
 
 ---
 
+local dependencyNamesSet
+local function cacheDependencyModNames()
+  dependencyNamesSet = nil
+
+  if not state.onlyShowDependedOnMods then return end
+
+  local modPath = mods.getFilenameModPath(state.filename)
+  if not modPath then return end
+
+  local currentModMetadata = mods.getModMetadataFromPath(modPath)
+  if not currentModMetadata then return end
+
+  local dependedOnMods = mods.getDependencyModNames(currentModMetadata)
+
+  dependencyNamesSet = {}
+  for _, mod in ipairs(dependedOnMods) do
+    dependencyNamesSet[mod] = true
+  end
+end
+
+-- todo: doesn't seem to work; diagnose
+local function dependencyIntersect(mods)
+  local depended = false
+
+  for _, name in ipairs(mods or {}) do
+    if dependencyNamesSet[name] then
+      return true
+    end
+  end
+
+  return false
+end
+
 local function getScore(item, searchParts, caseSensitive, fuzzy)
   local totalScore = 0
   local hasMatch = false
+
+  if dependencyNamesSet and not item.sprite.internalFile then
+    if not dependencyIntersect(item.sprite.associatedMods) then
+      return 0
+    end
+  end
 
   -- Always match with empty search
   if #searchParts == 0 then
@@ -380,11 +420,16 @@ local function makeList(data)
         searchRawItem = true,
         searchPreprocessor = prepareSearch
       },
-      _magicList = true
+      _magicList = true,
+      editorShownDependenciesChanged = function(self)
+        cacheDependencyModNames()
+        listWidgets.updateItems(self, items, data.selected)
+      end
     }
   searchField.enabled = true
   addSearchFieldHooks(data, list, searchField)
 
+  cacheDependencyModNames()
   listWidgets.updateItems(list, items, data.selected)
 
   function data.callbacks.filterList(text)
