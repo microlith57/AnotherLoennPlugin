@@ -1,8 +1,6 @@
 local drawableSprite = require("structs.drawable_sprite")
 local utils = require("utils")
 
-local backdrop_renderers = require("mods").requireFromPlugin("libraries.preview.backdrop_renderers")
-
 ---
 
 local loopWidth = 640
@@ -17,7 +15,7 @@ local function mod(x, m)
   return math.fmod(math.fmod(x, m) + m, m)
 end
 
-function render_planets.render(seed, planets, cam_x, cam_y, color, t)
+return function(seed, planets, cam_x, cam_y, color, t)
   if #big == 0 then
     for i, name in ipairs({"big00", "big01", "big02"}) do
       big[i] = drawableSprite.fromTexture("bgs/10/" .. name, {
@@ -62,7 +60,3 @@ function render_planets.render(seed, planets, cam_x, cam_y, color, t)
     sprite:draw()
   end
 end
-
-backdrop_renderers.planets = render_planets.render
-
-return render_planets

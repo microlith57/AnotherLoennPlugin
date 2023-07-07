@@ -1,15 +1,9 @@
 local drawableSprite = require("structs.drawable_sprite")
 
-local backdrop_renderers = require("mods").requireFromPlugin("libraries.preview.backdrop_renderers")
-
----
-
 local canvasWidth = 320
 local canvasHeight = 180
 
-local render_parallax = {}
-
-function render_parallax.render(id, parallax, cam_x, cam_y, color, t)
+return function(id, parallax, cam_x, cam_y, color, t)
   local tex = parallax.texture
   -- don't render invisible parallaxes
   if not tex or tex == "" then return end
@@ -76,7 +70,3 @@ function render_parallax.render(id, parallax, cam_x, cam_y, color, t)
 
   love.graphics.setBlendMode(orig_blendmode)
 end
-
-backdrop_renderers.parallax = render_parallax.render
-
-return render_parallax

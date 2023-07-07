@@ -121,6 +121,8 @@ function script.prerun()
   local prev = utils.deepcopy(state.map.fillers)
   local created_rooms = {}
 
+  -- todo move forward, backward outside of prerun, and use data
+
   local function forward(data)
     local existing_fillers = $(state.map.rooms):filter(room -> room.name:sub(1, 8) == "_filler_")
 

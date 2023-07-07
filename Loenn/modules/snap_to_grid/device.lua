@@ -1,32 +1,27 @@
 local mods = require("mods")
 
-local settings = mods.requireFromPlugin("libraries.settings")
+local viewportHandler = require("viewport_handler")
+local history = require("history")
+local snapshotUtils = require("snapshot_utils")
 
--- options:
--- * `individual` (like ahorn)
--- * `first` (snaps first item's position to grid; moves others by same amount)
--- * `centroid` (snaps selection's centre of mass to grid)
-local snapMode = settings.get("snapping_mode", "individual", "snap_to_grid")
-if snapMode ~= "individual" and snapMode ~= "first" and snapMode ~= "centroid" then
-  snapMode = "individual"
-end
+local state = require("loaded_state")
+local drawing = require("utils.drawing")
+local colors = require("consts.colors")
 
-local spacing_x = math.ceil(tonumber(settings.get("grid_spacing_x", 8, "snap_to_grid")) or 8)
-local spacing_y = math.ceil(tonumber(settings.get("grid_spacing_y", 8, "snap_to_grid")) or 8)
+local tools = require("tools")
+local toolUtils = require("tool_utils")
+local selectionItemUtils = require("selection_item_utils")
+
+local alp_utils = mods.requireFromPlugin("libraries.utils")
+local selections = mods.requireFromPlugin("libraries.selection")
 
 ---
 
-local tools = require("tools")
-local configs = require("configs")
-local selectionUtils = require("selections")
-local selectionItemUtils = require("selection_item_utils")
-local hotkeyHandler = require("hotkey_handler")
-local history = require("history")
-local toolUtils = require("tool_utils")
-local snapshotUtils = require("snapshot_utils")
-local viewportHandler = require("viewport_handler")
-local drawing = require("utils.drawing")
-local colors = require("consts.colors")
+local settings = mods.requireFromPlugin("modules.snap_to_grid.settings")
+
+---
+
+local spacing_x, spacing_y = settings.grid_spacing_x, settings.grid_spacing_x
 
 ---
 
@@ -117,13 +112,13 @@ end
 --[[
   snap each selected item to the grid individually
 ]]
-local function snapIndividual(room, layer, selections, dir)
+local function snapIndividual(room, layer, sels, dir)
   local dxs, dys = {}, {}
 
   local function forward()
     local modified = false
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       local dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
       dxs[i], dys[i] = dx, dy
 
@@ -138,7 +133,7 @@ local function snapIndividual(room, layer, selections, dir)
   local function backward()
     local modified = false
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       local dx, dy = dxs[i], dys[i]
       if not dx or not dy then
         break
@@ -158,16 +153,16 @@ end
 --[[
   snap the first item selected to the grid, moving the others by the same amount
 ]]
-local function snapFirst(room, layer, selections, dir)
+local function snapFirst(room, layer, sels, dir)
   local dx, dy = 0, 0
 
   local function forward()
     local rerender = false
 
-    local sel = selections[1]
+    local sel = sels[1]
     dx, dy = getSnapDelta(sel.item and sel.item.x or sel.x, sel.item and sel.item.y or sel.y, dir)
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
         rerender = true
       end
@@ -179,7 +174,7 @@ local function snapFirst(room, layer, selections, dir)
   local function backward()
     local rerender = false
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, -dx, -dy) then
         rerender = true
       end
@@ -194,14 +189,14 @@ end
 --[[
   move the selected items so that their centre of mass is snapped to grid
 ]]
-local function snapCentroid(room, layer, selections, dir)
+local function snapCentroid(room, layer, sels, dir)
   local dx, dy = 0, 0
 
   local function forward()
     local sum_x = 0
     local sum_y = 0
     local n = 0
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       sum_x = sum_x + (sel.item and sel.item.x or sel.x)
       sum_y = sum_y + (sel.item and sel.item.y or sel.y)
       n = n + 1
@@ -210,7 +205,7 @@ local function snapCentroid(room, layer, selections, dir)
 
     local rerender = false
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, dx, dy) then
         rerender = true
       end
@@ -222,7 +217,7 @@ local function snapCentroid(room, layer, selections, dir)
   local function backward()
     local rerender = false
 
-    for i, sel in ipairs(selections) do
+    for i, sel in ipairs(sels) do
       if (dx ~= 0 or dy ~= 0) and selectionItemUtils.moveSelection(room, layer, sel, -dx, -dy) then
         rerender = true
       end
@@ -250,33 +245,21 @@ local function snap(dir)
     return
   end
 
-  local room
-  local layer
-  local selections
+  local room = state.getSelectedRoom()
 
-  -- hehe :3c
-  local orig_getContextSelections = selectionUtils.getContextSelections
-  function selectionUtils.getContextSelections(r, l, _x, _y, sels)
-    room = r
-    layer = l
-    selections = sels
-  end
-  -- this is why the mouse position was saved earlier
-  tools.currentTool.mouseclicked(mouse_x, mouse_y, configs.editor.contextMenuButton, false, {})
-  selectionUtils.getContextSelections = orig_getContextSelections
-
-  if not selections or #selections == 0 then
+  local sels = selections.getSelections()
+  if not sels or #sels == 0 then
     return
   end
 
   local forward, backward
 
-  if snapMode == "individual" then
-    forward, backward = snapIndividual(room, layer, selections, dir)
-  elseif snapMode == "first" then
-    forward, backward = snapFirst(room, layer, selections, dir)
-  elseif snapMode == "centroid" then
-    forward, backward = snapCentroid(room, layer, selections, dir)
+  if settings.snapping_mode == "individual" then
+    forward, backward = snapIndividual(room, layer, sels, dir)
+  elseif settings.snapping_mode == "first" then
+    forward, backward = snapFirst(room, layer, sels, dir)
+  elseif settings.snapping_mode == "centroid" then
+    forward, backward = snapCentroid(room, layer, sels, dir)
   else
     return -- unreachable
   end
@@ -309,48 +292,12 @@ end
 
 ---
 
-local gridSnapHotkeys = {}
-
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_snapLeft", "ctrl + shift + left", "snap_to_grid"),
-  snapLeft,
-  gridSnapHotkeys
-)
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_snapRight", "ctrl + shift + right", "snap_to_grid"),
-  snapRight,
-  gridSnapHotkeys
-)
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_snapUp", "ctrl + shift + up", "snap_to_grid"),
-  snapUp,
-  gridSnapHotkeys
-)
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_snapDown", "ctrl + shift + down", "snap_to_grid"),
-  snapDown,
-  gridSnapHotkeys
-)
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_snapNeutral", "shift + s", "snap_to_grid"),
-  snapNeutral,
-  gridSnapHotkeys
-)
-hotkeyHandler.createAndRegisterHotkey(
-  settings.get("hotkey_toggle_grid", "ctrl + shift + g", "snap_to_grid"),
-  toggle_grid,
-  gridSnapHotkeys
-)
-
--- add the hotkeys
-local _orig_createHotkeyDevice = hotkeyHandler.createHotkeyDevice
-function hotkeyHandler.createHotkeyDevice(hotkeys)
-  for i, hotkey in ipairs(gridSnapHotkeys) do
-    table.insert(hotkeys, hotkey)
-  end
-  hotkeyHandler.createHotkeyDevice = _orig_createHotkeyDevice
-  return _orig_createHotkeyDevice(hotkeys)
-end
+local hotkey_left    = alp_utils.addHotkey(settings.hotkey_left, snapLeft)
+local hotkey_right   = alp_utils.addHotkey(settings.hotkey_right, snapRight)
+local hotkey_up      = alp_utils.addHotkey(settings.hotkey_up, snapUp)
+local hotkey_down    = alp_utils.addHotkey(settings.hotkey_down, snapDown)
+local hotkey_neutral = alp_utils.addHotkey(settings.hotkey_neutral, snapNeutral)
+local hotkey_grid    = alp_utils.addHotkey(settings.hotkey_grid, toggle_grid)
 
 ---
 

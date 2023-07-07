@@ -1,103 +1,92 @@
 local mods = require("mods")
 local v = require("utils.version_parser")
-local meta = require("meta")
 local config = require("utils.config")
-local utils = require("utils")
+local logging = require("logging")
 
---[[
-  this code stolen & modified from Lönn Extended by JaThePlayer, licensed under the MIT license
-]]
+local currentVersion = mods.requireFromPlugin("consts.version")
+local alp_utils = mods.requireFromPlugin("libraries.utils")
+
 ---
 
-local extSettings = {}
+local alp_settings = {}
+local settings = mods.getModSettings()
 
-local supportedLoennVersion = v("0.7.1")
-local currentLoennVersion = meta.version
-
-function extSettings.getPersistence(settingName, default)
-  local settings = mods.getModPersistence()
-  if not settingName then
-    return settings
-  end
-
-  local value = settings[settingName]
-  if value == nil then
-    value = default
-    settings[settingName] = default
-  end
-
-  return value
-end
-
-function extSettings.savePersistence()
-  config.writeConfig(extSettings.getPersistence(), true)
-end
-
-function extSettings.get(settingName, default, namespace)
-  local settings = mods.getModSettings()
-  if not settingName then
-    return settings
-  end
-
-  local target = settings
-  if namespace then
-    local nm = settings[namespace]
-    if not nm then
-      settings[namespace] = {}
-      nm = settings[namespace]
-    end
-
-    target = nm
-  end
-
-  local value = target[settingName]
-  if value == nil then
-    value = default
-    target[settingName] = default
-  end
-
-  if namespace then
-    settings[namespace] = utils.deepcopy(target) -- since configMt:__newindex uses ~= behind the scenes to determine whether to save or not, we need to copy the table to make it save
-  end
-
-  return value
-end
-
-function extSettings.set(settingName, to, namespace)
-  local settings = mods.getModSettings()
-  if not settingName then
-    return settings
-  end
-
-  local target = settings
-  if namespace then
-    local nm = settings[namespace]
-    if not nm then
-      settings[namespace] = {}
-      nm = settings[namespace]
-    end
-
-    target = nm
-  end
-
-  target[settingName] = to
-
-  if namespace then
-    settings[namespace] = utils.deepcopy(target) -- since configMt:__newindex uses ~= behind the scenes to determine whether to save or not, we need to copy the table to make it save
+local lastSavedWith = settings._config_version and v(settings._config_version) or v("0.0.0")
+if currentVersion ~= v("0.0.0-dev") then
+  if lastSavedWith > currentVersion then
+    error(
+      "[AnotherLoennPlugin] the plugin settings file was last saved with a newer version, and isn't backwards compatible with this one!"
+    )
   end
 end
 
-function extSettings.enabled()
-  return supportedLoennVersion == currentLoennVersion or currentLoennVersion == v("0.0.0-dev")
-end
-
-function extSettings.featureEnabled(namespace, default)
-  if default == nil then
-    default = true
+local migratingTo = lastSavedWith
+local function willUpdateConfigVersion(new)
+  if migratingTo < new then
+    migratingTo = new
   end
-  return extSettings.enabled() and extSettings.get("_enabled", default, namespace)
 end
 
 ---
 
-return extSettings
+local function loadSettings(module_settings)
+  -- run all migrations associated with the module
+  for _, migration in ipairs(module_settings.migrations or {}) do
+    if migration.upto > lastSavedWith then
+      migration.apply(settings, lastSavedWith)
+      willUpdateConfigVersion(migration.upto)
+    end
+  end
+
+  -- load the module's settings
+  local enabled = module_settings.load(settings)
+
+  -- ensure any changes in either migrations or loading are committed
+  config.writeConfig(settings)
+
+  return enabled
+end
+-- load the root module's settings immediately
+loadSettings(mods.requireFromPlugin("modules.root_settings"))
+
+---
+
+function alp_settings.loadModuleSettings(name)
+  -- get the settings handler
+  -- todo: silence warnings
+  local module_settings = mods.requireFromPlugin("modules." .. name .. ".settings")
+
+  -- ...or a default
+  if not module_settings then
+    module_settings = {}
+
+    function module_settings.load(s)
+      if not settings[name] then
+        settings[name] = { _enabled = true }
+      elseif settings[name]._enabled == nil then
+        settings[name]._enabled = true
+      end
+
+      return settings[name]._enabled
+    end
+  end
+
+  -- run migrations and load the settings
+  local enabled = loadSettings(module_settings)
+  return enabled, module_settings
+end
+
+function alp_settings.doneLoading()
+  -- if any migrations were run, update the config version to the migrated-to version
+  --
+  -- any migration represents a break in backwards compatibility, so this means that the file won't be opened in
+  -- plugin versions older than the most recent migration
+  if migratingTo > lastSavedWith then
+    logging.info("[AnotherLoennPlugin] migrations from " .. tostring(lastSavedWith) .. " to " .. tostring(migratingTo) .. " applied!")
+    settings._config_version = tostring(migratingTo)
+  end
+end
+
+---
+
+return alp_settings

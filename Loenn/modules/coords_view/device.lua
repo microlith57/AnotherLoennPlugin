@@ -1,6 +1,4 @@
 local mods = require("mods")
-local hotkeyHandler = require("hotkey_handler")
-local hotkeyStruct = require("structs.hotkey")
 local viewportHandler = require("viewport_handler")
 local drawing = require("utils.drawing")
 local loadedState = require("loaded_state")
@@ -8,8 +6,10 @@ local loadedState = require("loaded_state")
 local ui = require("ui")
 local uie = require("ui.elements")
 
-local settings = mods.requireFromPlugin("libraries.settings")
-local cursorLength = tonumber(settings.get("cursor_length", 6, "coords_view")) or 6
+local hotkeys = require("standard_hotkeys")
+local hotkeyStruct = require("structs.hotkey")
+
+local settings = mods.requireFromPlugin("modules.coords_view.settings")
 
 ---
 
@@ -27,6 +27,7 @@ local roomTileX, roomTileY
 ---
 
 local function updateCoords(force)
+  -- todo move to window file
   if not activeWindow then
     return
   end
@@ -63,6 +64,8 @@ local function updateCoords(force)
       device.coordsWindow.content.children[index]:removeSelf()
     end
   end
+
+  -- todo use table instead
 
   set(1, "screen: (" .. tostring(mouseX) .. ", " .. tostring(mouseY) .. ")")
   set(2, "world:          (" .. tostring(worldX) .. ", " .. tostring(worldY) .. ")")
@@ -111,7 +114,7 @@ function device.draw()
       love.graphics.translate(math.floor(-viewport.x), math.floor(-viewport.y))
       love.graphics.scale(viewport.scale)
 
-      local length = cursorLength / viewport.scale
+      local length = settings.cursor_length / viewport.scale
 
       local coarseX, coarseY = tileX * 8, tileY * 8
       love.graphics.setColor(255, 0, 0, 255)
@@ -143,15 +146,7 @@ end
 
 ---
 
-local hotkey = hotkeyStruct.createHotkey(settings.get("hotkey", "`", "coords_view"), toggleCoordsWindow)
-
--- add the hotkey
-local _orig_createHotkeyDevice = hotkeyHandler.createHotkeyDevice
-function hotkeyHandler.createHotkeyDevice(hotkeys)
-  table.insert(hotkeys, hotkey)
-  hotkeyHandler.createHotkeyDevice = _orig_createHotkeyDevice
-  return _orig_createHotkeyDevice(hotkeys)
-end
+table.insert(hotkeys, hotkeyStruct.createHotkey(settings.hotkey, toggleCoordsWindow))
 
 ---
 
