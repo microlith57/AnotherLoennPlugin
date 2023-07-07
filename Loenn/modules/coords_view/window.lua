@@ -7,7 +7,7 @@ local widgetUtils = require("ui.widgets.utils")
 ---
 
 local coordsWindow = {}
-coordsWindow.group = nil -- added in ui/windows/coords_window.lua
+coordsWindow.group = nil -- added in ui/windows/coords_view.lua
 local windowX, windowY = 0, 0
 
 function coordsWindow.displayCoordinates()
