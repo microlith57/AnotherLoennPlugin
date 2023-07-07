@@ -20,6 +20,17 @@ handler.migrations = {
         end
       end
     end
+  },
+  {
+    upto = v("2.0.0"),
+    apply = function(settings)
+      if settings.keyboard_pan
+        and settings.keyboard_pan.time_after_each_keypress_to_allow_movement then
+
+        settings.keyboard_pan.time_after_each_keypress_to_allow_movement = nil
+
+      end
+    end
   }
 }
 
@@ -29,12 +40,7 @@ local defaults = {
   hotkey_right = "alt + d",
   hotkey_up    = "alt + w",
   hotkey_down  = "alt + s",
-  speed = 1024,
-  time_after_each_keypress_to_allow_movement = 1
-}
-
-local renamings = {
-  time_after_each_keypress_to_allow_movement = "timer_max"
+  speed = 1024
 }
 
 function handler.load(settings)
@@ -47,7 +53,7 @@ function handler.load(settings)
       settings.keyboard_pan[k] = v
     end
 
-    handler[renamings[k] or k] = v
+    handler[k] = v
   end
 
   return settings.keyboard_pan._enabled
