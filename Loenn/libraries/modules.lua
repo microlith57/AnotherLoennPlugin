@@ -1,5 +1,5 @@
 local modules = {
-  -- { name = "coords_view" },
+  { name = "coords_view" },
   { name = "keyboard_pan" },
   { name = "room_mover" },
   { name = "snap_to_grid" },

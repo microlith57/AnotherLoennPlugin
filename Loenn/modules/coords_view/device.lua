@@ -14,94 +14,65 @@ local settings = mods.requireFromPlugin("modules.coords_view.settings")
 ---
 
 local device = {_enabled = true, _type = "device"}
-device.coordsWindow = nil
 
-local activeWindow = false
-
-local mouseX, mouseY = 0, 0
-local worldX, worldY = 0, 0
-local tileX, tileY = 0, 0
-local roomX, roomY
-local roomTileX, roomTileY
+local sx, sy
+local wx, wy
+local tx, ty
+local rx, ry
+local rtx, rty
 
 ---
 
-local function updateCoords(force)
-  -- todo move to window file
-  if not activeWindow then
-    return
+local function tile(x, y)
+  return math.floor(x / 8 + 0.4), math.floor(y / 8 + 0.4)
+end
+
+local function getCoords(x, y)
+  sx, sy = x or sx, y or sy
+  if not sx or not sy then
+    sx, sy = viewportHandler.getMousePosition()
   end
 
-  local viewport = viewportHandler.viewport
+  local map_x, map_y = viewportHandler.getMapCoordinates(sx, sy)
+  wx, wy = math.floor(map_x + 0.4), math.floor(map_y + 0.4)
+  tx, ty = tile(wx, wy)
 
-  local new_worldX, new_worldY = viewportHandler.getMapCoordinates(mouseX + 0.5 * viewport.scale, mouseY + 0.5 * viewport.scale)
-
-  if not force and new_worldX == worldX and new_worldY == worldY then
-    return
-  end
-
-  worldX, worldY = new_worldX, new_worldY
-  tileX, tileY = math.floor(worldX / 8 + 0.4), math.floor(worldY / 8 + 0.4)
+  local res = {
+    screen = {sx, sy},
+    world = {wx, wy},
+    world_tiles = {tx, ty},
+    world_snap = {tx * 8, ty * 8}
+  }
 
   local room = loadedState.getSelectedRoom()
   if room then
-    roomX, roomY = worldX - room.x, worldY - room.y
-    roomTileX, roomTileY = math.floor(roomX / 8 + 0.4), math.floor(roomY / 8 + 0.4)
+    rx, ry = wx - room.x, wy - room.y
+    rtx, rty = tile(rx, ry)
+
+    res.room = {rx, ry}
+    res.room_tiles = {rtx, rty}
+    res.room_snap = {rtx * 8, rty * 8}
   else
-    roomX, roomY, roomTileX, roomTileY = nil, nil, nil, nil
+    rx, ry = nil, nil
   end
 
-  function set(index, text)
-    if device.coordsWindow.content.children[index] then
-      device.coordsWindow.content.children[index]:setText(text)
-    else
-      device.coordsWindow.content:addChild(uie.label(text))
-    end
-  end
-
-  function unset(index)
-    if device.coordsWindow.content.children[index] then
-      device.coordsWindow.content.children[index]:removeSelf()
-    end
-  end
-
-  -- todo use table instead
-
-  set(1, "screen: (" .. tostring(mouseX) .. ", " .. tostring(mouseY) .. ")")
-  set(2, "world:          (" .. tostring(worldX) .. ", " .. tostring(worldY) .. ")")
-  set(3, "world / 8:     (" .. tostring(tileX) .. ", " .. tostring(tileY) .. ")")
-  set(4, "world, snap: (" .. tostring(tileX * 8) .. ", " .. tostring(tileY * 8) .. ")")
-
-  if roomX and roomY then
-    set(5, "room:           (" .. tostring(roomX) .. ", " .. tostring(roomY) .. ")")
-    set(6, "room / 8:      (" .. tostring(roomTileX) .. ", " .. tostring(roomTileY) .. ")")
-    set(7, "room, snap:  (" .. tostring(roomTileX * 8) .. ", " .. tostring(roomTileY * 8) .. ")")
-  else
-    unset(5)
-    unset(6)
-    unset(7)
-  end
+  return res
 end
 
----
-
 function device.mousemoved(x, y, dx, dy, istouch)
+  if not device.coordsWindow or not device.coordsWindow.active then return end
+
   local viewport = viewportHandler.viewport
 
   if x >= 0 and y >= 0 and x < viewport.width and y < viewport.height then
-    if mouseX ~= x or mouseY ~= y then
-      mouseX, mouseY = x, y
-      updateCoords(true)
-    end
+    device.coordsWindow.updateCoords(getCoords(x, y))
   end
 end
 
 function device.draw()
-  if not activeWindow then
-    return
-  end
+  if not device.coordsWindow or not device.coordsWindow.active then return end
 
-  updateCoords()
+  device.coordsWindow.updateCoords(getCoords())
 
   local viewport = viewportHandler.viewport
 
@@ -116,14 +87,13 @@ function device.draw()
 
       local length = settings.cursor_length / viewport.scale
 
-      local coarseX, coarseY = tileX * 8, tileY * 8
       love.graphics.setColor(255, 0, 0, 255)
-      love.graphics.line(coarseX - length, coarseY, coarseX + length, coarseY)
-      love.graphics.line(coarseX, coarseY - length, coarseX, coarseY + length)
+      love.graphics.line(tx * 8 - length, ty * 8, tx * 8 + length, ty * 8)
+      love.graphics.line(tx * 8, ty * 8 - length, tx * 8, ty * 8 + length)
 
       love.graphics.setColor(255, 255, 0, 255)
-      love.graphics.line(worldX - length, worldY, worldX + length, worldY)
-      love.graphics.line(worldX, worldY - length, worldX, worldY + length)
+      love.graphics.line(wx - length, wy, wx + length, wy)
+      love.graphics.line(wx, wy - length, wx, wy + length)
 
       love.graphics.pop()
       love.graphics.setLineWidth(lineWidth)
@@ -133,20 +103,7 @@ end
 
 ---
 
-local function toggleCoordsWindow()
-  if activeWindow then
-    ui.root:recollect()
-    activeWindow:removeSelf()
-    activeWindow = false
-  else
-    activeWindow = device.coordsWindow.displayCoordinates()
-    updateCoords(true)
-  end
-end
-
----
-
-table.insert(hotkeys, hotkeyStruct.createHotkey(settings.hotkey, toggleCoordsWindow))
+table.insert(hotkeys, hotkeyStruct.createHotkey(settings.hotkey, function() device.coordsWindow.toggle() end))
 
 ---
 
