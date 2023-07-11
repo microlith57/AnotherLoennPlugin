@@ -16,7 +16,7 @@ local configs = require("configs")
 local persistence = require("persistence")
 local logging = require("logging")
 
-local windowPersister = require("ui.window_postition_persister")
+local windowPersister = require("ui.window_position_persister")
 local windowPersisterName = "alp_texture_browser"
 local windowPersisterNameDialog = "alp_texture_browser_dialog"
 
@@ -34,8 +34,8 @@ local textureBrowser = {}
 
 ---
 
+-- todo: separate atlas stuff into a separate file
 local textureListUnfiltered = {}
-local textureBrowserGroup = uie.group({})
 local externalAtlasLoaded = false
 local atlasLoadTask
 
@@ -193,6 +193,7 @@ local function dependencyIntersect(mods)
   return false
 end
 
+-- todo: separate search into its own file
 local function getGetScore(data)
   local function getScore(item, searchParts, caseSensitive, fuzzy)
     local totalScore = 0
@@ -302,18 +303,18 @@ end
 
 ---
 
-local function textureTooltip()
-  return uie.group.panel {
-    uie.label("awawa")
-  }
-    :with {
-      interactive = -2,
-      updateHidden = true
-    }
-    -- :hook {
-    --   update = updateTooltip
-    -- }
-end
+-- local function textureTooltip()
+--   return uie.group.panel {
+--     uie.label("awawa")
+--   }
+--     :with {
+--       interactive = -2,
+--       updateHidden = true
+--     }
+--     -- :hook {
+--     --   update = updateTooltip
+--     -- }
+-- end
 
 ---
 
@@ -672,23 +673,15 @@ function textureBrowser.browseTextures(dialog)
   ---
 
   windowPersister.trackWindow(persisterName, window)
-  textureBrowserGroup.parent:addChild(window)
+  textureBrowser.group.parent:addChild(window)
   widgetUtils.addWindowCloseButton(window, windowCloseCallback)
 
-  if not textureTooltip then
-    textureTooltip = makeTooltip()
-    textureBrowserGroup.parent:addChild(textureTooltip)
-  end
+  -- if not textureTooltip then
+  --   textureTooltip = makeTooltip()
+  --   textureBrowser.group.parent:addChild(textureTooltip)
+  -- end
 
   return window
-end
-
--- group to get access to the main group and sanely inject windows in it
-function textureBrowser.getWindow()
-  local textureBrowserLib = mods.requireFromPlugin("libraries.texture_browser")
-  textureBrowserLib.textureBrowserWindow = textureBrowser
-
-  return textureBrowserGroup
 end
 
 return textureBrowser
