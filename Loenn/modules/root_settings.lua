@@ -6,7 +6,7 @@ local handler = {}
 
 handler.migrations = {
   {
-    upto = v("2.0.0"),
+    upto = v("1.4.0"),
     apply = function(settings)
       if settings.debugrc then
         settings.debugrc_host = settings.debugrc.host

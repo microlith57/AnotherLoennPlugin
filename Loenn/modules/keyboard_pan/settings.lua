@@ -7,9 +7,9 @@ handler.migrations = {
     upto = v("0.3.0"),
     apply = function(settings)
       if settings.keyboard_pan then
-        if settings.keyboard_pan.hotkey_left  == "a"
+        if settings.keyboard_pan.hotkey_left     == "a"
           and settings.keyboard_pan.hotkey_right == "d"
-          and settings.keyboard_pan.hotkey_up       == "w"
+          and settings.keyboard_pan.hotkey_up    == "w"
           and settings.keyboard_pan.hotkey_down  == "s" then
 
           settings.keyboard_pan.hotkey_left  = "alt + a"
@@ -22,7 +22,7 @@ handler.migrations = {
     end
   },
   {
-    upto = v("2.0.0"),
+    upto = v("1.4.0"),
     apply = function(settings)
       if settings.keyboard_pan
         and settings.keyboard_pan.time_after_each_keypress_to_allow_movement then

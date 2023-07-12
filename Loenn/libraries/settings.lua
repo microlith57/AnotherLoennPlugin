@@ -57,7 +57,7 @@ function alp_settings.loadModuleSettings(name)
   local module_settings = mods.requireFromPlugin("modules." .. name .. ".settings")
 
   -- ...or a default
-  if not module_settings then
+  if not module_settings or type(module_settings) ~= "table" then
     module_settings = {}
 
     function module_settings.load(s)
