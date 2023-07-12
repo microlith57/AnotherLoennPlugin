@@ -26,6 +26,8 @@ function script.prerun(args)
   local success, fromClipboard = utils.unserialize(clipboard, true, 3)
   if not success then return false end
 
+  -- todo move forward, backward outside of prerun, and use data
+
   local function forward(data)
     state.map.stylesFg = fromClipboard.fg
     state.map.stylesBg = fromClipboard.bg

@@ -1,17 +1,8 @@
-local mods = require("mods")
-
-local settings = mods.requireFromPlugin("libraries.settings")
-if not settings.featureEnabled("debugrc") then
-  return {enabled = false}
-end
-
----
-
 local utils = require("utils")
 local has_req, req = utils.tryrequire("lib.luajit-request.luajit-request")
 
 if not has_req then
-  return {enabled = false}
+  return
 end
 
 local yaml = require("lib.yaml")
@@ -19,9 +10,10 @@ local yaml = require("lib.yaml")
 ---
 
 local debugrc = {
-  enabled = true,
-  host = settings.get("host", "localhost", "debugrc"),
-  port = tonumber(settings.get("port", "auto", "debugrc"))
+  -- host = settings.get("host", "localhost", "debugrc"),
+  -- port = tonumber(settings.get("port", "auto", "debugrc"))
+  host = "localhost",
+  port = nil
 }
 
 if not debugrc.port then

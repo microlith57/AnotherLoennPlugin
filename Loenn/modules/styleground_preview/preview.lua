@@ -1,12 +1,14 @@
+local mods = require("mods")
+
 local viewportHandler = require("viewport_handler")
 local utils = require("utils")
 local drawing = require("utils.drawing")
-local atlases = require("atlases")
+local persistence = require("persistence")
 
-local room_list = require("mods").requireFromPlugin("libraries.parsers.room_list")
-local fader_list = require("mods").requireFromPlugin("libraries.parsers.fader_list")
+local room_list = mods.requireFromPlugin("libraries.parsers.room_list")
+local fader_list = mods.requireFromPlugin("libraries.parsers.fader_list")
 
-local backdrop_renderers = require("mods").requireFromPlugin("libraries.preview.backdrop_renderers")
+local backdrop_renderers = mods.requireFromPlugin("modules.styleground_preview.backdrop_renderers")
 
 ---
 
@@ -19,8 +21,10 @@ preview.bg_enabled = false
 preview.fg_enabled = false
 preview.bg_canvas = nil
 preview.fg_canvas = nil
-preview.snap_to_room = true
+preview.snap_to_room = persistence["anotherloennplugin_styleground_preview_snap_to_room"]
 preview.anim_start = nil
+
+if preview.snap_to_room == nil then preview.snap_to_room = true end
 
 function preview.toggle_bg()
   preview.bg_enabled = not preview.bg_enabled
@@ -40,6 +44,7 @@ end
 
 function preview.toggle_snap()
   preview.snap_to_room = not preview.snap_to_room
+  persistence["anotherloennplugin_styleground_preview_snap_to_room"] = preview.snap_to_room
 end
 
 function preview.toggle_anim()

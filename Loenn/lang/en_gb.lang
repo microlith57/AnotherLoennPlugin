@@ -1,9 +1,27 @@
+mods.AnotherLoennPlugin.name=Another Lönn Plugin
+mods.Celeste.name=Celeste
+
+# texture browser
+ui.menubar.anotherloennplugin_texture_browser=Texture Browser
+ui.anotherloennplugin.texture_browser_window.window_title=Texture Browser
+ui.anotherloennplugin.texture_browser_window.loading_assets=Loading modded assets, please wait...
+
+# coords viewer
+ui.anotherloennplugin.coords_window.window_title=Coordinate Viewer
+ui.anotherloennplugin.coords_window.rows.screen=Screen
+ui.anotherloennplugin.coords_window.rows.world=World
+ui.anotherloennplugin.coords_window.rows.world_tiles=World / 8
+ui.anotherloennplugin.coords_window.rows.world_snap=World (snap)
+ui.anotherloennplugin.coords_window.rows.room=Room
+ui.anotherloennplugin.coords_window.rows.room_tiles=Room / 8
+ui.anotherloennplugin.coords_window.rows.room_snap=Room (snap)
+
 # styleground preview
-ui.menubar.anotherloennplugin_preview_styleground=Stylegrounds
-ui.menubar.anotherloennplugin_preview_styleground_bg=Background
-ui.menubar.anotherloennplugin_preview_styleground_fg=Foreground
-ui.menubar.anotherloennplugin_preview_styleground_snap=Snap to Room
-ui.menubar.anotherloennplugin_preview_styleground_anim=Animate
+ui.menubar.anotherloennplugin_styleground_preview=Stylegrounds
+ui.menubar.anotherloennplugin_styleground_preview_bg=Background
+ui.menubar.anotherloennplugin_styleground_preview_fg=Foreground
+ui.menubar.anotherloennplugin_styleground_preview_snap=Snap to Room
+ui.menubar.anotherloennplugin_styleground_preview_anim=Animate
 
 # room mover tool
 tools.name.anotherloennplugin_room_mover=Room Mover
