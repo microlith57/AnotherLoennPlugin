@@ -178,21 +178,6 @@ end
 
 ---
 
--- local function textureTooltip()
---   return uie.group.panel {
---     uie.label("awawa")
---   }
---     :with {
---       interactive = -2,
---       updateHidden = true
---     }
---     -- :hook {
---     --   update = updateTooltip
---     -- }
--- end
-
----
-
 local function makeSearchRow(data)
   local searchField = uie.field(
     data.searchText,
@@ -211,16 +196,16 @@ local function makeSearchRow(data)
   local searchRow = uie.row {
       searchField,
 
-    -- todo: make this a dropown menu with a list/grid toggle and a "collapse animations" toggle,
+    -- todo: make this a dropdown menu with a list/grid toggle and a "collapse animations" toggle,
     -- todo:   the latter of which hides anything that ends in a string of numbers that aren't all 0
     -- todo:   (i guess by adding another requirement to the search)
     -- todo: language-ify List & Grid
-    uie.dropdown(
-      {"List", "Grid"},
-      function(_, mode) data.callbacks.setViewMode(mode == "List" and "list" or "grid") end
-    )
-      :with { width = 60 }
-      :with(uiu.rightbound)
+    -- uie.dropdown(
+    --   {"List", "Grid"},
+    --   function(_, mode) data.callbacks.setViewMode(mode == "List" and "list" or "grid") end
+    -- )
+    --   :with { width = 60 }
+    --   :with(uiu.rightbound)
   }
     :with(uiu.fillWidth)
     :with { style = { padding = 4 } }
@@ -260,6 +245,7 @@ local function makeListRow(data)
         padding = 0,
         spacing = 0,
       },
+      anotherloennplugin_texture_browser_tooltip = {}
     }
     :hook {
       layoutLate = function(orig, self)
@@ -331,15 +317,24 @@ local function makeList(data)
       local col_mods = table.concat(d.associatedMods, ", ")
       local col_name = d.name
       local col_res = width .. RESOLUTION_SEP .. height
+      local col_res_long = col_res
 
       if shouldCollapse(data, d) then
         col_name = d.anim.basename .. "*"
         col_res = #d.anim .. ",  " .. col_res
+        col_res_long = col_res_long .. ",  " .. #d.anim .. " frames"
       end
 
       elem.children[1].children[1].text = col_mods
       elem.children[2].children[1].text = col_name
       elem.children[3].children[1].text = col_res
+      elem.anotherloennplugin_texture_browser_tooltip = {
+        d.sprite, col_mods, col_name, col_res_long,
+      }
+      elem.anotherloennplugin_texture_browser_tooltip.width = width
+      elem.anotherloennplugin_texture_browser_tooltip.height = height
+      elem.anotherloennplugin_texture_browser_tooltip.offsetX = d.sprite.offsetX
+      elem.anotherloennplugin_texture_browser_tooltip.offsetY = d.sprite.offsetY
 
       local widest = data.widest_modname_so_far
       if widest < MAX_MOD_NAME_WIDTH then
@@ -493,7 +488,7 @@ function textureBrowser.browseTextures(dialog)
     viewMode = "list",
     searchText = initialSearch,
     isDialog = dialog ~= nil,
-    collapseMultiframe = true
+    collapseMultiframe = false -- todo make configurable
   }
 
   -- loading text
@@ -545,11 +540,6 @@ function textureBrowser.browseTextures(dialog)
   windowPersister.trackWindow(persisterName, window)
   textureBrowser.group.parent:addChild(window)
   widgetUtils.addWindowCloseButton(window, windowCloseCallback)
-
-  -- if not textureTooltip then
-  --   textureTooltip = makeTooltip()
-  --   textureBrowser.group.parent:addChild(textureTooltip)
-  -- end
 
   return window
 end

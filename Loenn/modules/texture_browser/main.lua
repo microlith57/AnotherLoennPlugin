@@ -6,9 +6,14 @@ local windows = require("ui.windows")
 local texture_browser_module = {}
 
 function texture_browser_module.init()
-  local textureBrowserWindow = mods.requireFromPlugin("modules.texture_browser.window")
   local group = windows.windows['alp_texture_browser']
+
+  local textureBrowserWindow = mods.requireFromPlugin("modules.texture_browser.window")
   textureBrowserWindow.group = group
+
+  local tooltipWindow = mods.requireFromPlugin("modules.texture_browser.tooltip")
+  tooltipWindow.group = group
+  tooltipWindow.makeTooltip()
 
   ---
 
