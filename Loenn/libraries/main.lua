@@ -21,7 +21,7 @@ if supportedLoennVersion ~= currentLoennVersion
   and currentLoennVersion ~= v("0.0.0-dev")
   and currentVersion ~= v("0.0.0-dev") then
 
-  logging.warn("[AnotherLoennPlugin] refusing to load; expected loenn " .. supportedLoennVersion .. " but got " .. currentLoennVersion)
+  logging.warn("[AnotherLoennPlugin] refusing to load; expected loenn " .. tostring(supportedLoennVersion) .. " but got " .. tostring(currentLoennVersion))
   return {}
 
 end
