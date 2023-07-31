@@ -48,23 +48,42 @@ for _, m in ipairs(modules) do
   end
 end
 
+---
+
+local initialised = false
+
 local sceneHandler = require("scene_handler")
 local orig_sceneHandler_changeScene = sceneHandler.changeScene
-function sceneHandler.changeScene(name)
-  local res = orig_sceneHandler_changeScene(name)
 
-  if res and name == "Editor" then
+local function init_all()
+  if not initialised then
     for _, m in ipairs(modules) do
       if m.enabled and m.module and m.module.init then
         logging.info("[AnotherLoennPlugin] initialising module " .. m.name)
         m.module.init()
       end
     end
-    sceneHandler.changeScene = orig_sceneHandler_changeScene
+  end
+  initialised = true
+  sceneHandler.changeScene = orig_sceneHandler_changeScene
+end
+
+function sceneHandler.changeScene(name)
+  local res = orig_sceneHandler_changeScene(name)
+
+  if res and name == "Editor" then
+    init_all()
   end
 
   return res
 end
+
+tasks.newTask(function()
+  while not initialised and sceneHandler.currentScene ~= "Editor" do
+    tasks.delayProcessing()
+  end
+  init_all()
+end)
 
 ---
 
