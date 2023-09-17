@@ -62,9 +62,9 @@ function script.prerun(args)
     end
     if args.addTags ~= "" then
       if style.tag ~= "" then
-        style.tag = style.tag + ','
+        style.tag = style.tag .. ','
       end
-      style.tag = style.tag + args.addTags
+      style.tag = style.tag .. args.addTags
     end
     table.insert(data.newFg, style)
   end
