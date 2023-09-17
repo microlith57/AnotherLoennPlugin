@@ -9,6 +9,7 @@ local script = {}
 
 script.name = "extendSelectionSimple"
 script.displayName = "Extend Selection (Simple)"
+script.useSelections = true
 
 function script.run(room, args)
   local selected = selection.getSelections()
