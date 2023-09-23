@@ -63,21 +63,21 @@ function script.prerun(args)
     if args.addTags ~= "" then
       style.tag = style.tag or ""
       if style.tag ~= "" then
-        style.tag = style.tag .. ','
+        style.tag = style.tag .. ","
       end
       style.tag = style.tag .. args.addTags
     end
     table.insert(data.newFg, style)
   end
 
-   for i, style in ipairs(fromClipboard.bg or {}) do
+  for i, style in ipairs(fromClipboard.bg or {}) do
     if args.replaceOnly ~= "" then
       style.only = args.replaceOnly
     end
     if args.addTags ~= "" then
       style.tag = style.tag or ""
       if style.tag ~= "" then
-        style.tag = style.tag .. ','
+        style.tag = style.tag .. ","
       end
       style.tag = style.tag .. args.addTags
     end
