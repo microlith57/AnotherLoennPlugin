@@ -61,6 +61,7 @@ function script.prerun(args)
       style.only = args.replaceOnly
     end
     if args.addTags ~= "" then
+      style.tag = style.tag or ""
       if style.tag ~= "" then
         style.tag = style.tag .. ','
       end
@@ -69,11 +70,12 @@ function script.prerun(args)
     table.insert(data.newFg, style)
   end
 
-  for i, style in ipairs(fromClipboard.bg or {}) do
+   for i, style in ipairs(fromClipboard.bg or {}) do
     if args.replaceOnly ~= "" then
       style.only = args.replaceOnly
     end
     if args.addTags ~= "" then
+      style.tag = style.tag or ""
       if style.tag ~= "" then
         style.tag = style.tag .. ','
       end
