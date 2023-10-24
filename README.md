@@ -19,6 +19,6 @@ It also supports the following experimental add-ons, which you should **only put
 
 These features can be configured; see [the wiki](https://github.com/microlith57/AnotherLoennPlugin/wiki) for information.
 
-Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.6.1), to make sure it doesn't break things.
+Note that this will intentionally stop working for newer Lönn versions than it is updated for (currently v0.7.6), to make sure it doesn't break things.
 
 Some code in this repository is derived from [Lönn](https://github.com/CelestialCartographers/Loenn) under the MIT License.
