@@ -23,8 +23,9 @@ if supportedLoennVersion ~= currentLoennVersion
 
   logging.error("[AnotherLoennPlugin] refusing to load; expected loenn " .. tostring(supportedLoennVersion) .. " but got " .. tostring(currentLoennVersion))
   return {}
-
 end
+
+logging.info("[AnotherLoennPlugin] plugin version " .. tostring(currentVersion))
 
 ---
 
@@ -84,6 +85,10 @@ tasks.newTask(function()
   end
   init_all()
 end)
+
+if sceneHandler.currentScene == "Editor" then
+  init_all()
+end
 
 ---
 
