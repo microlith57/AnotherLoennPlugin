@@ -17,6 +17,8 @@ return function(id, parallax, cam_x, cam_y, color, t)
     tex = "bgs/microlith57/AnotherLoennPlugin/" .. tex
   end
 
+  -- todo "bgs/MaxHelpingHand/animatedParallax/"
+
   -- get the texture from the atlas
   local sprite = drawableSprite.fromTexture(tex, {
     scaleX = (parallax.flipx and -1 or 1),
