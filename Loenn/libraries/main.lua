@@ -7,25 +7,41 @@ local tasks = require("utils.tasks")
 local currentLoennVersion = meta.version
 local supportedLoennVersion = mods.requireFromPlugin("consts.loenn_version")
 local currentVersion = mods.requireFromPlugin("consts.version")
+local dev_version = v("0.0.0-dev")
 
 ---
 
--- version check
+logging.info("[AnotherLoennPlugin] plugin version " .. tostring(currentVersion))
+
+-- version check; prevents the plugin from loading on versions of lönn it wasn't made for
 --
 -- can be bypassed by either a using development version of lönn,
 -- or using a development version of this plugin,
 -- or by editing the consts/loenn_version.lua file
 --
 -- doing any of these is at your own risk
-if supportedLoennVersion ~= currentLoennVersion
-  and currentLoennVersion ~= v("0.0.0-dev")
-  and currentVersion ~= v("0.0.0-dev") then
 
-  logging.error("[AnotherLoennPlugin] refusing to load; expected loenn " .. tostring(supportedLoennVersion) .. " but got " .. tostring(currentLoennVersion))
-  return {}
+if currentLoennVersion ~= dev_version and currentVersion ~= dev_version then
+  if currentLoennVersion < supportedLoennVersion then
+
+    logging.error("[AnotherLoennPlugin] refusing to load; expected loenn >= " .. tostring(supportedLoennVersion) .. " but got " .. tostring(currentLoennVersion))
+    return {}
+
+  end
+
+  local nextMinorVersion = setmetatable({
+    supportedLoennVersion[1],
+    supportedLoennVersion[2] + 1,
+    0
+  }, getmetatable(supportedLoennVersion))
+
+  if currentLoennVersion >= nextMinorVersion then
+
+    logging.error("[AnotherLoennPlugin] refusing to load; expected loenn < " .. tostring(nextMinorVersion) .. " but got " .. tostring(currentLoennVersion))
+    return {}
+
+  end
 end
-
-logging.info("[AnotherLoennPlugin] plugin version " .. tostring(currentVersion))
 
 ---
 
