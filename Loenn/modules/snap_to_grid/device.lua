@@ -12,7 +12,8 @@ local tools = require("tools")
 local toolUtils = require("tool_utils")
 local selectionItemUtils = require("selection_item_utils")
 
-local alp_utils = mods.requireFromPlugin("libraries.utils")
+local hotkeyHandler = require("hotkey_handler")
+
 local selections = mods.requireFromPlugin("libraries.selection")
 
 ---
@@ -292,12 +293,12 @@ end
 
 ---
 
-local hotkey_left    = alp_utils.addHotkey(settings.hotkey_left, snapLeft)
-local hotkey_right   = alp_utils.addHotkey(settings.hotkey_right, snapRight)
-local hotkey_up      = alp_utils.addHotkey(settings.hotkey_up, snapUp)
-local hotkey_down    = alp_utils.addHotkey(settings.hotkey_down, snapDown)
-local hotkey_neutral = alp_utils.addHotkey(settings.hotkey_neutral, snapNeutral)
-local hotkey_grid    = alp_utils.addHotkey(settings.hotkey_grid, toggle_grid)
+local hotkey_left    = hotkeyHandler.addHotkey("global", settings.hotkey_left, snapLeft)
+local hotkey_right   = hotkeyHandler.addHotkey("global", settings.hotkey_right, snapRight)
+local hotkey_up      = hotkeyHandler.addHotkey("global", settings.hotkey_up, snapUp)
+local hotkey_down    = hotkeyHandler.addHotkey("global", settings.hotkey_down, snapDown)
+local hotkey_neutral = hotkeyHandler.addHotkey("global", settings.hotkey_neutral, snapNeutral)
+local hotkey_grid    = hotkeyHandler.addHotkey("global", settings.hotkey_grid, toggle_grid)
 
 ---
 

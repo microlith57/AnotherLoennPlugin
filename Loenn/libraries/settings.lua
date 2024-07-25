@@ -4,7 +4,6 @@ local config = require("utils.config")
 local logging = require("logging")
 
 local currentVersion = mods.requireFromPlugin("consts.version")
-local alp_utils = mods.requireFromPlugin("libraries.utils")
 
 ---
 

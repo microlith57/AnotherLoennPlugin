@@ -1,6 +1,6 @@
 local modules = {
   { name = "coords_view" },
-  { name = "texture_browser" },
+  -- { name = "texture_browser" },
   { name = "keyboard_pan" },
   { name = "room_mover" },
   { name = "snap_to_grid" },

@@ -64,6 +64,7 @@ function coordsWindow.open()
   window.titlebar.style.padding = 4
 
   windowPersister.trackWindow(windowPersisterName, window)
+  widgetUtils.preventOutOfBoundsMovement(window)
 
   coordsWindow.group.parent:addChild(window)
   coordsWindow.group:reflow()

@@ -1,9 +1,5 @@
 local utils = require("utils")
 
-local hotkeyStruct = require("structs.hotkey")
-local standardHotkeys = require("standard_hotkeys")
-local hotkeyHandler = require("hotkey_handler")
-
 ---
 
 local alp_utils = {}
@@ -71,13 +67,6 @@ function alp_utils.mktable_p(table, ...)
 
     return true, target
   end
-end
-
----
-
-function alp_utils.addHotkey(activator, callback)
-  local hotkey = hotkeyStruct.createHotkey(activator, callback)
-  hotkeyHandler.registerHotkey(hotkey, standardHotkeys)
 end
 
 ---

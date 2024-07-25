@@ -6,8 +6,7 @@ local loadedState = require("loaded_state")
 local ui = require("ui")
 local uie = require("ui.elements")
 
-local hotkeys = require("standard_hotkeys")
-local hotkeyStruct = require("structs.hotkey")
+local hotkeyHandler = require("hotkey_handler")
 
 local settings = mods.requireFromPlugin("modules.coords_view.settings")
 
@@ -103,7 +102,7 @@ end
 
 ---
 
-table.insert(hotkeys, hotkeyStruct.createHotkey(settings.hotkey, function() device.coordsWindow.toggle() end))
+hotkeyHandler.addHotkey("global", settings.hotkey, function() device.coordsWindow.toggle() end)
 
 ---
 

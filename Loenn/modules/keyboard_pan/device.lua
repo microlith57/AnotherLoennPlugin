@@ -3,7 +3,7 @@ local mods = require("mods")
 local viewportHandler = require("viewport_handler")
 local ui = require("ui.main")
 
-local hotkeys = require("standard_hotkeys")
+local hotkeyHandler = require("hotkey_handler")
 local hotkeyStruct = require("structs.hotkey")
 
 local settings = mods.requireFromPlugin("modules.keyboard_pan.settings")
@@ -43,15 +43,10 @@ end
 
 local function callback() end
 
-keys.left  = hotkeyStruct.createHotkey(settings.hotkey_left, callback)
-keys.right = hotkeyStruct.createHotkey(settings.hotkey_right, callback)
-keys.up    = hotkeyStruct.createHotkey(settings.hotkey_up, callback)
-keys.down  = hotkeyStruct.createHotkey(settings.hotkey_down, callback)
-
-table.insert(hotkeys, keys.left)
-table.insert(hotkeys, keys.right)
-table.insert(hotkeys, keys.up)
-table.insert(hotkeys, keys.down)
+keys.left  = hotkeyHandler.addHotkey("global", settings.hotkey_left, callback)
+keys.right = hotkeyHandler.addHotkey("global", settings.hotkey_right, callback)
+keys.up    = hotkeyHandler.addHotkey("global", settings.hotkey_up, callback)
+keys.down  = hotkeyHandler.addHotkey("global", settings.hotkey_down, callback)
 
 ---
 
