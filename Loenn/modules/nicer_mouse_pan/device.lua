@@ -1,4 +1,5 @@
 local mods = require("mods")
+local utils = require("utils")
 local configs = require("configs")
 local viewportHandler = require("viewport_handler")
 local drawing = require("utils.drawing")
@@ -114,6 +115,8 @@ function device.mousereleased(x, y, button, istouch, presses)
   end
 end
 
+device.earlier_device.mousereleased = device.mousereleased
+
 function device.update(dt)
   local viewport = viewportHandler.viewport
 
@@ -127,14 +130,29 @@ function device.update(dt)
       return
     end
 
-    viewport.x -= dx * dt * settings.autoscroll_speed
-    viewport.y -= dy * dt * settings.autoscroll_speed
+    local power, speed = settings.autoscroll_power, settings.autoscroll_speed
+
+    local ax, ay = math.abs(dx / r), math.abs(dy / r)
+    local avx, avy = math.pow(ax, power) * speed, math.pow(ay, power) * speed
+    local vx, vy = utils.sign(dx) * avx, utils.sign(dy) * avy
+
+    viewport.x -= vx * dt
+    viewport.y -= vy * dt
   end
 end
 
-local function chevron(x, y, r, theta, sel)
+local function lerp(a,b,t) return a+(b-a)*t end
+
+local function chevron(x, y, r, theta, sel, fac)
+  fac = utils.clamp(fac, 0, 1)
   if sel then
-    love.graphics.setColor(colors.roomBorderColors[1])
+    local ra, ga, ba = table.unpack(colors.resizeTriangleColor)
+    local rb, gb, bb = table.unpack(colors.roomBorderColors[1])
+    love.graphics.setColor(
+      lerp(ra, rb, fac),
+      lerp(ga, gb, fac),
+      lerp(ba, bb, fac)
+    )
   else
     love.graphics.setColor(colors.resizeTriangleColor)
   end
@@ -151,14 +169,14 @@ local function chevron(x, y, r, theta, sel)
   love.graphics.pop()
 end
 
-function device.draw()
+function device.earlier_device.draw()
   if autoscroll_mode then
     drawing.callKeepOriginalColor(function()
       local x, y, r = autoscrollX, autoscrollY, settings.autoscroll_widget_radius
       local mx, my = viewportHandler.getMousePosition()
       local dx, dy = x - mx, y - my
-
-      sel = math.pow(dx, 2) + math.pow(dy, 2) > math.pow(r, 2)
+      local delta = math.sqrt(math.pow(dx, 2) + math.pow(dy, 2))
+      local sel = delta > r
 
       love.graphics.setColor(colors.roomBackgroundColors[1])
       love.graphics.circle("fill", x, y, r)
@@ -173,10 +191,10 @@ function device.draw()
 
       -- chevrons
       if r >= 14 then
-        chevron(x, y, r, math.pi * 0.0, sel and dy < 0)
-        chevron(x, y, r, math.pi * 0.5, sel and dx > 0)
-        chevron(x, y, r, math.pi * 1.0, sel and dy > 0)
-        chevron(x, y, r, math.pi * 1.5, sel and dx < 0)
+        chevron(x, y, r, math.pi * 0.0, sel, -dy / delta)
+        chevron(x, y, r, math.pi * 0.5, sel,  dx / delta)
+        chevron(x, y, r, math.pi * 1.0, sel,  dy / delta)
+        chevron(x, y, r, math.pi * 1.5, sel, -dx / delta)
       end
 
       -- border
@@ -197,7 +215,7 @@ function device._hook()
   function ui.mousemoved(...)
     prev_ui_mousemoved(...)
 
-    if grabbing and settings.override_ui then
+    if (grabbing or autoscroll_mode) and settings.override_ui then
       ui.hovering = false
       return false
     end

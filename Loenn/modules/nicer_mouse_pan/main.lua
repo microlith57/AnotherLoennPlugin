@@ -17,6 +17,7 @@ function nicer_mouse_pan_module.init()
 
   -- add the device before the viewport device
   table.insert(devices, viewport_device_index, device)
+  table.insert(devices, 1, device.earlier_device)
   device._hook()
 end
 

@@ -12,7 +12,8 @@ local defaults = {
   wrap_margin = 25,
   enable_autoscroll = true,
   autoscroll_button = 3,
-  autoscroll_speed = 5,
+  autoscroll_speed = 20,
+  autoscroll_power = 1.3,
   autoscroll_widget_radius = 15,
 }
 
