@@ -102,12 +102,7 @@ end
 
 ---
 
-print("TEST:", settings.hotkey)
-
-hotkeyHandler.addHotkey("global", settings.hotkey, function()
-                          print("TEST: pressed")
-                          device.coordsWindow.toggle()
-end)
+hotkeyHandler.addHotkey("global", settings.hotkey, function() device.coordsWindow.toggle() end)
 
 ---
 
