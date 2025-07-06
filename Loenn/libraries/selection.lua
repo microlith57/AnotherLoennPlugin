@@ -13,7 +13,7 @@ function selection.getSelections()
   local selections
 
   local orig_getContextSelections = selectionUtils.getContextSelections
-  function selectionUtils.getContextSelections(room, layer, x, y, sels)
+  function selectionUtils.getContextSelections(room, layer, subLayer, x, y, sels)
     selections = sels
   end
   tools.tools["selection"].mouseclicked(-1024, -1024, configs.editor.contextMenuButton)
