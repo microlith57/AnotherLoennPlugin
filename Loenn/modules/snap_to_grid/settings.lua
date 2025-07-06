@@ -13,7 +13,7 @@ end
 
 handler.migrations = {
   {
-    upto = v("1.7.0"),
+    upto = v("1.6.1"),
     apply = function(settings)
       if settings.snap_to_grid then
         dirs = {

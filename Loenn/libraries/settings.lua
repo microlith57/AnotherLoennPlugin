@@ -13,17 +13,30 @@ local settings = mods.getModSettings()
 
 alp_settings.by_module = {}
 
+if settings._config_version == "1.7.0" then
+  -- i made an oopsy...
+  logging.info("[AnotherLoennPlugin] retconning v1.7.0 to v1.6.1")
+  settings._config_version = "1.6.1"
+  config.writeConfig(settings)
+end
+
 local lastSavedWith = settings._config_version and v(settings._config_version) or v("0.0.0")
+
 if currentVersion ~= v("0.0.0-dev") then
   if lastSavedWith > currentVersion then
     error(
-      "[AnotherLoennPlugin] the plugin settings file was last saved with a newer version, and isn't backwards compatible with this one!"
+      "[AnotherLoennPlugin] the plugin settings file was last saved with at least version " .. tostring(lastSavedWith) .. ", and isn't backwards compatible with " .. tostring(currentVersion) .. " (older)!"
     )
   end
 end
 
 local migratingTo = lastSavedWith
 local function willUpdateConfigVersion(new)
+  if migratingTo > currentVersion then
+    error(
+      "[AnotherLoennPlugin] trying to migrate to version " .. tostring(migratingTo) .. " but only on version " .. tostring(currentVersion) .. "; this should never happen!"
+    )
+  end
   if migratingTo < new then
     migratingTo = new
   end
