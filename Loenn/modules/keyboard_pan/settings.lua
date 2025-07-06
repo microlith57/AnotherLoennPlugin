@@ -34,7 +34,7 @@ handler.migrations = {
   }
 }
 
-local defaults = {
+handler.defaults = {
   _enabled = true,
   hotkey_left  = "alt + a",
   hotkey_right = "alt + d",
@@ -43,12 +43,34 @@ local defaults = {
   speed = 1024
 }
 
+handler.groups = {
+  {
+    title = "ui.anotherloennplugin_settings.group.general.keyboard_pan",
+    checkbox = "keyboard_pan._enabled",
+    fieldOrder = {
+      "keyboard_pan.hotkey_left",
+      "keyboard_pan.hotkey_right",
+      "keyboard_pan.hotkey_up",
+      "keyboard_pan.hotkey_down",
+      "keyboard_pan.speed",
+    }
+  }
+}
+
+handler.fieldInformation = {
+  hotkey_left = { fieldType = "keyboard_hotkey" },
+  hotkey_right = { fieldType = "keyboard_hotkey" },
+  hotkey_up = { fieldType = "keyboard_hotkey" },
+  hotkey_down = { fieldType = "keyboard_hotkey" },
+  speed = { fieldType = "number", minimumValue = 0 },
+}
+
 function handler.load(settings)
   if not settings.keyboard_pan then
     settings.keyboard_pan = { _enabled = true }
   end
 
-  for k, v in pairs(defaults) do
+  for k, v in pairs(handler.defaults) do
     if settings.keyboard_pan[k] == nil then
       settings.keyboard_pan[k] = v
     end

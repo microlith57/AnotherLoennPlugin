@@ -49,10 +49,7 @@ local modules = mods.requireFromPlugin("libraries.modules")
 
 -- load settings
 local settings = mods.requireFromPlugin("libraries.settings")
-for _, m in ipairs(modules) do
-  m.enabled, m.settings = settings.loadModuleSettings(m.name)
-end
-settings.doneLoading()
+settings.loadAll(modules)
 
 -- load enabled modules
 for _, m in ipairs(modules) do

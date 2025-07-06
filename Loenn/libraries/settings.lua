@@ -1,4 +1,5 @@
 local mods = require("mods")
+local utils = require("utils")
 local v = require("utils.version_parser")
 local config = require("utils.config")
 local logging = require("logging")
@@ -9,6 +10,8 @@ local currentVersion = mods.requireFromPlugin("consts.version")
 
 local alp_settings = {}
 local settings = mods.getModSettings()
+
+alp_settings.by_module = {}
 
 local lastSavedWith = settings._config_version and v(settings._config_version) or v("0.0.0")
 if currentVersion ~= v("0.0.0-dev") then
@@ -28,17 +31,20 @@ end
 
 ---
 
-local function loadSettings(module_settings)
-  -- run all migrations associated with the module
-  for _, migration in ipairs(module_settings.migrations or {}) do
-    if migration.upto > lastSavedWith then
-      migration.apply(settings, lastSavedWith)
-      willUpdateConfigVersion(migration.upto)
+local function loadSettings(module_settings, first_load)
+  first_load = first_load or false
+  if first_load then
+    -- run all migrations associated with the module
+    for _, migration in ipairs(module_settings.migrations or {}) do
+      if migration.upto > lastSavedWith then
+        migration.apply(settings, lastSavedWith)
+        willUpdateConfigVersion(migration.upto)
+      end
     end
   end
 
   -- load the module's settings
-  local enabled = module_settings.load(settings)
+  local enabled = module_settings.load(settings, first_load)
 
   -- ensure any changes in either migrations or loading are committed
   config.writeConfig(settings)
@@ -50,7 +56,7 @@ loadSettings(mods.requireFromPlugin("modules.root_settings"))
 
 ---
 
-function alp_settings.loadModuleSettings(name)
+function alp_settings.loadModuleSettings(name, first_load)
   -- get the settings handler
   -- todo: silence warnings
   local module_settings = mods.requireFromPlugin("modules." .. name .. ".settings")
@@ -71,7 +77,13 @@ function alp_settings.loadModuleSettings(name)
   end
 
   -- run migrations and load the settings
-  local enabled = loadSettings(module_settings)
+  local enabled = loadSettings(module_settings, first_load)
+
+  alp_settings.by_module[name] = {
+    enabled = enabled,
+    settings = module_settings
+  }
+
   return enabled, module_settings
 end
 
@@ -84,6 +96,30 @@ function alp_settings.doneLoading()
     logging.info("[AnotherLoennPlugin] migrations from " .. tostring(lastSavedWith) .. " to " .. tostring(migratingTo) .. " applied!")
     settings._config_version = tostring(migratingTo)
   end
+end
+
+function alp_settings.loadAll(modules)
+  for _, m in ipairs(modules) do
+    m.enabled, m.settings = alp_settings.loadModuleSettings(m.name, true)
+  end
+  alp_settings.doneLoading()
+end
+
+function alp_settings.reloadAll(modules)
+  for _, m in ipairs(modules) do
+    m.enabled, m.settings = alp_settings.loadModuleSettings(m.name, false)
+  end
+end
+
+function alp_settings.get()
+  return utils.deepcopy(settings)
+end
+
+function alp_settings.set(data)
+  settings = utils.deepcopy(data)
+
+  modules = mods.requireFromPlugin("libraries.modules")
+  alp_settings.reloadAll(modules)
 end
 
 ---
