@@ -2,9 +2,10 @@ local modules = {
   { name = "coords_view" },
   -- { name = "texture_browser" },
   { name = "keyboard_pan" },
+  { name = "nicer_mouse_pan" },
   { name = "snap_to_grid" },
   { name = "styleground_preview" },
-  { name = "teleporter" }
+  { name = "teleporter" },
 }
 
 setmetatable(modules, {
