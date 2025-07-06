@@ -293,12 +293,12 @@ end
 
 ---
 
-local hotkey_left    = hotkeyHandler.addHotkey("global", settings.hotkey_left, snapLeft)
-local hotkey_right   = hotkeyHandler.addHotkey("global", settings.hotkey_right, snapRight)
-local hotkey_up      = hotkeyHandler.addHotkey("global", settings.hotkey_up, snapUp)
-local hotkey_down    = hotkeyHandler.addHotkey("global", settings.hotkey_down, snapDown)
-local hotkey_neutral = hotkeyHandler.addHotkey("global", settings.hotkey_neutral, snapNeutral)
-local hotkey_grid    = hotkeyHandler.addHotkey("global", settings.hotkey_grid, toggle_grid)
+local hotkey_left    = hotkeyHandler.addHotkey("global", settings.hotkey_snap_left, snapLeft)
+local hotkey_right   = hotkeyHandler.addHotkey("global", settings.hotkey_snap_right, snapRight)
+local hotkey_up      = hotkeyHandler.addHotkey("global", settings.hotkey_snap_up, snapUp)
+local hotkey_down    = hotkeyHandler.addHotkey("global", settings.hotkey_snap_down, snapDown)
+local hotkey_neutral = hotkeyHandler.addHotkey("global", settings.hotkey_snap_neutral, snapNeutral)
+local hotkey_grid    = hotkeyHandler.addHotkey("global", settings.hotkey_toggle_grid, toggle_grid)
 
 ---
 
