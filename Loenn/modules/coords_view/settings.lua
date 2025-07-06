@@ -32,7 +32,7 @@ function handler.load(settings)
       settings.coords_view[k] = v
     end
 
-    handler[k] = v
+    handler[k] = settings.coords_view[k]
   end
 
   return settings.coords_view._enabled

@@ -97,7 +97,7 @@ function handler.load(settings)
       settings.snap_to_grid[k] = v
     end
 
-    handler[k] = v
+    handler[k] = settings.snap_to_grid[k]
   end
 
   return settings.snap_to_grid._enabled

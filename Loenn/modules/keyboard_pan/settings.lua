@@ -75,7 +75,7 @@ function handler.load(settings)
       settings.keyboard_pan[k] = v
     end
 
-    handler[k] = v
+    handler[k] = settings.keyboard_pan[k]
   end
 
   return settings.keyboard_pan._enabled

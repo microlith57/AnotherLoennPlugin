@@ -69,7 +69,7 @@ function handler.load(settings)
       settings.nicer_mouse_pan[k] = v
     end
 
-    handler[k] = v
+    handler[k] = settings.nicer_mouse_pan[k]
   end
 
   return settings.nicer_mouse_pan._enabled
