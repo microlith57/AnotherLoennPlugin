@@ -8,8 +8,12 @@ local defaults = {
   grab_mouse = true,
   override_ui = true,
   wrap_mode = "wrap",
+  wrap_mode_when_tool_action_pressed = "cushion",
   wrap_margin = 25,
   enable_autoscroll = true,
+  autoscroll_button = 3,
+  autoscroll_speed = 5,
+  autoscroll_widget_radius = 15,
 }
 
 function handler.load(settings)

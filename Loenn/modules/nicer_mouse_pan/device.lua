@@ -2,6 +2,7 @@ local mods = require("mods")
 local configs = require("configs")
 local viewportHandler = require("viewport_handler")
 local drawing = require("utils.drawing")
+local colors = require("consts.colors")
 
 local ui = require("ui")
 
@@ -12,8 +13,11 @@ local settings = mods.requireFromPlugin("modules.nicer_mouse_pan.settings")
 local device = {_enabled = true, _type = "device"}
 device.earlier_device = {_enabled = true, _type = "device"}
 
-local lastWrapDx, lastWrapDy = 0, 0
 local grabbing = false
+local lastWrapDx, lastWrapDy = 0, 0
+
+local autoscroll_mode
+local autoscrollX, autoscrollY = 0, 0
 
 local function wrap(s, ds, min, max, mode)
   if ds < 0 and s < min then
@@ -33,15 +37,36 @@ local function wrap(s, ds, min, max, mode)
   return 0
 end
 
---[[
-  whenever certain actions are being performed (eg. panning), ensure the cursor stays inside the window, by wrapping it around the window
-]]
-function device.mousedragmoved(x, y, dx, dy, button, istouch)
-  if already_mousedragmoved then return end
+---
 
+function device.mouseclicked(x, y, button, istouched, presses)
+  local autoscrollButton = settings.autoscroll_button or configs.editor.canvasZoomExtentsButton
+
+  if autoscroll_mode then
+    autoscroll_mode = nil
+    return true
+  end
+
+  if button == autoscrollButton and presses == 1 then
+    autoscroll_mode = "click"
+    autoscrollX, autoscrollY = x, y
+    return true
+  end
+end
+
+function device.mousedragmoved(x, y, dx, dy, button, istouch)
+  local actionButton = configs.editor.toolActionButton
   local movementButton = configs.editor.canvasMoveButton
-  local canvasZoomExtentsButton = configs.editor.canvasZoomExtentsButton
+  local autoscrollButton = settings.autoscroll_button
   local viewport = viewportHandler.viewport
+
+  if button == autoscrollButton then
+    if not autoscroll_mode then
+      autoscroll_mode = "drag"
+      autoscrollX, autoscrollY = x, y
+    end
+    return true
+  end
 
   if button == movementButton then
     grabbing = true
@@ -56,8 +81,13 @@ function device.mousedragmoved(x, y, dx, dy, button, istouch)
 
     lastWrapDx, lastWrapDy = 0, 0
 
-    local thisWrapDx = wrap(x, dx, settings.wrap_margin, viewport.width - settings.wrap_margin, settings.wrap_mode)
-    local thisWrapDy = wrap(y, dy, settings.wrap_margin, viewport.height - settings.wrap_margin, settings.wrap_mode)
+    mode = settings.wrap_mode
+    if love.mouse.isDown(actionButton) then
+      mode = settings.wrap_mode_when_tool_action_pressed
+    end
+
+    local thisWrapDx = wrap(x, dx, settings.wrap_margin, viewport.width - settings.wrap_margin, mode)
+    local thisWrapDy = wrap(y, dy, settings.wrap_margin, viewport.height - settings.wrap_margin, mode)
 
     if thisWrapDx ~= 0 then
       love.mouse.setX(x + thisWrapDx)
@@ -67,19 +97,92 @@ function device.mousedragmoved(x, y, dx, dy, button, istouch)
     end
 
     lastWrapDx, lastWrapDy = thisWrapDx, thisWrapDy
-  elseif button == canvasZoomExtentsButton then
-    -- ...
   end
 end
 
 function device.mousereleased(x, y, button, istouch, presses)
   local movementButton = configs.editor.canvasMoveButton
+  local autoscrollButton = settings.autoscroll_button
 
   if button == movementButton then
     if grabbing then
       grabbing = false
       love.mouse.setGrabbed(false)
     end
+  elseif button == autoscrollButton and autoscroll_mode == "drag" then
+    autoscroll_mode = nil
+  end
+end
+
+function device.update(dt)
+  local viewport = viewportHandler.viewport
+
+  if autoscroll_mode then
+    local x, y = viewportHandler.getMousePosition()
+    local dx, dy = autoscrollX - x, autoscrollY - y
+    local r = settings.autoscroll_widget_radius
+
+    local delta_sq = math.pow(dx, 2) + math.pow(dy, 2)
+    if delta_sq <= math.pow(r, 2) then
+      return
+    end
+
+    viewport.x -= dx * dt * settings.autoscroll_speed
+    viewport.y -= dy * dt * settings.autoscroll_speed
+  end
+end
+
+local function chevron(x, y, r, theta, sel)
+  if sel then
+    love.graphics.setColor(colors.roomBorderColors[1])
+  else
+    love.graphics.setColor(colors.resizeTriangleColor)
+  end
+
+  love.graphics.push()
+  love.graphics.translate(x, y)
+  love.graphics.rotate(theta)
+  love.graphics.translate(0, r - 4)
+  love.graphics.line(
+    -4, -4,
+     0,  0,
+     4, -4
+  )
+  love.graphics.pop()
+end
+
+function device.draw()
+  if autoscroll_mode then
+    drawing.callKeepOriginalColor(function()
+      local x, y, r = autoscrollX, autoscrollY, settings.autoscroll_widget_radius
+      local mx, my = viewportHandler.getMousePosition()
+      local dx, dy = x - mx, y - my
+
+      sel = math.pow(dx, 2) + math.pow(dy, 2) > math.pow(r, 2)
+
+      love.graphics.setColor(colors.roomBackgroundColors[1])
+      love.graphics.circle("fill", x, y, r)
+
+      -- dot
+      if sel then
+        love.graphics.setColor(colors.resizeTriangleColor)
+      else
+        love.graphics.setColor(colors.roomBorderColors[1])
+      end
+      love.graphics.circle("fill", x, y, 2)
+
+      -- chevrons
+      if r >= 14 then
+        chevron(x, y, r, math.pi * 0.0, sel and dy < 0)
+        chevron(x, y, r, math.pi * 0.5, sel and dx > 0)
+        chevron(x, y, r, math.pi * 1.0, sel and dy > 0)
+        chevron(x, y, r, math.pi * 1.5, sel and dx < 0)
+      end
+
+      -- border
+      love.graphics.setColor(colors.roomBorderColors[1])
+      love.graphics.circle("line", x, y, r)
+    end)
   end
 end
 
