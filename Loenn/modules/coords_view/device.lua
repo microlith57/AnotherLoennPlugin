@@ -40,7 +40,7 @@ local function getCoords(x, y)
     screen = {sx, sy},
     world = {wx, wy},
     world_tiles = {tx, ty},
-    world_snap = {tx * 8, ty * 8}
+    world_snap = {tx * 8, ty * 8},
   }
 
   local room = loadedState.getSelectedRoom()

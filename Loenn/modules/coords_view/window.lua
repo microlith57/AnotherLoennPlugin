@@ -23,7 +23,7 @@ local baseOrder = {
   "world_snap",
   "room",
   "room_tiles",
-  "room_snap"
+  "room_snap",
 }
 
 local order = baseOrder -- settings.rows
