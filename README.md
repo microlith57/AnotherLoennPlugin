@@ -16,6 +16,6 @@ This plugin adds:
 
 These features can be configured; see [the wiki](https://github.com/microlith57/AnotherLoennPlugin/wiki) for information.
 
-Note that this will intentionally stop working for newer Lönn (major) versions than it is updated for (currently v0.9.x, so it won't work for v0.10.x / v1.x), to make sure it doesn't break things.
+Note that this will intentionally stop working for newer Lönn (major) versions than it is updated for (currently v1.0.x, so it won't work for v1.1.x), to make sure it doesn't break things.
 
 Some code in this repository is derived from [Lönn](https://github.com/CelestialCartographers/Loenn) under the MIT License.
