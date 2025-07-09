@@ -7,6 +7,8 @@ This plugin adds:
 - keybinds to **pan the view**, defaulting to <kbd>alt + </kbd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
 - a tool to **teleport the player** using Everest's DebugRC interface
 - a **coordinate viewer** (<kbd>`</kbd> by default)
+- the ability to **wrap the mouse around the screen when panning**
+- **autoscrolling** (middle mouse by default)
 - scripts (for use with [Lönn Scripts](https://gamebanana.com/tools/8050)) to:
   - **copy and paste stylegrounds** using the clipboard, so you can move them between maps, edit them in a text editor, or send them to others;
   - **convert fillers into filler rooms**, for easier editing
