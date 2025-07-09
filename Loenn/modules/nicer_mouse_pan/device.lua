@@ -213,12 +213,18 @@ function device._hook()
 
   prev_ui_mousemoved = ui.mousemoved
   function ui.mousemoved(...)
-    prev_ui_mousemoved(...)
+    local res = prev_ui_mousemoved(...)
 
     if (grabbing or autoscroll_mode) and settings.override_ui then
       ui.hovering = false
       return false
     end
+
+    return res
+  end
+
+  function ui.__anotherloennplugin_unload()
+    ui.mousemoved = prev_ui_mousemoved
   end
 end
 
