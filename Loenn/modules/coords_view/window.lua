@@ -14,8 +14,6 @@ local windowPersisterName = "alp_coords_view"
 
 ---
 
--- local settings =
-
 local baseOrder = {
   "screen",
   "world",
