@@ -1,5 +1,6 @@
 local mods = require("mods")
 local utils = require("utils")
+local keyboardHelper = require("utils.keyboard")
 local configs = require("configs")
 local viewportHandler = require("viewport_handler")
 local drawing = require("utils.drawing")
@@ -38,6 +39,14 @@ local function wrap(s, ds, min, max, mode)
   return 0
 end
 
+local function autoscroll_modifier_pressed()
+  local mod = settings.autoscroll_modifier
+
+  if mod == "" then return true end
+
+  return keyboardHelper.modifierHeld(mod)
+end
+
 ---
 
 function device.mouseclicked(x, y, button, istouched, presses)
@@ -48,7 +57,7 @@ function device.mouseclicked(x, y, button, istouched, presses)
     return true
   end
 
-  if button == autoscrollButton and presses == 1 then
+  if button == autoscrollButton and presses == 1 and autoscroll_modifier_pressed() then
     autoscroll_mode = "click"
     autoscrollX, autoscrollY = x, y
     return true
@@ -61,7 +70,7 @@ function device.mousedragmoved(x, y, dx, dy, button, istouch)
   local autoscrollButton = settings.autoscroll_button
   local viewport = viewportHandler.viewport
 
-  if button == autoscrollButton then
+  if button == autoscrollButton and (autoscroll_mode or autoscroll_modifier_pressed()) then
     if not autoscroll_mode then
       autoscroll_mode = "drag"
       autoscrollX, autoscrollY = x, y

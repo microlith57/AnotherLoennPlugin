@@ -12,6 +12,7 @@ handler.defaults = {
   wrap_margin = 25,
   enable_autoscroll = true,
   autoscroll_button = 3,
+  autoscroll_modifier = "shift",
   autoscroll_speed = 20,
   autoscroll_power = 1.3,
   autoscroll_widget_radius = 15,
@@ -69,7 +70,7 @@ function handler.load(settings)
       settings.nicer_mouse_pan[k] = v
     end
 
-    handler[k] = settings.nicer_mouse_pan[k]
+    handler[k] = v
   end
 
   return settings.nicer_mouse_pan._enabled

@@ -1,1 +1,1 @@
-return require("utils.version_parser")("1.7.0")
+return require("utils.version_parser")("1.7.1")
