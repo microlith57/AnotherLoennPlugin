@@ -1,5 +1,6 @@
 local modules = {
   { name = "coords_view" },
+  { name = "motivational_message" },
   -- { name = "texture_browser" },
   { name = "keyboard_pan" },
   { name = "nicer_mouse_pan" },
