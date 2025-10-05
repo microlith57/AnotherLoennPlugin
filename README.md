@@ -13,6 +13,8 @@ This plugin adds:
   - **copy and paste stylegrounds** using the clipboard, so you can move them between maps, edit them in a text editor, or send them to others;
   - **convert fillers into filler rooms**, for easier editing
   - **fix lightbeams placed in Ahorn**
+  - **modify the selection** (either extending or decimating it)
+- a configurable **motivational message** (<kbd>=</kbd> by default)
 
 These features can be configured; see [the wiki](https://github.com/microlith57/AnotherLoennPlugin/wiki) for information.
 
