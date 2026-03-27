@@ -29,10 +29,13 @@ return function(id, parallax, cam_x, cam_y, color, t)
   })
   if not sprite then return end
 
+  local alpha = nil
+
   -- handle blendmode
   local orig_blendmode = love.graphics.getBlendMode()
   if parallax.blendmode == "additive" then
     love.graphics.setBlendMode("add")
+    alpha = color.a
   else
     love.graphics.setBlendMode("alpha")
   end
@@ -66,7 +69,7 @@ return function(id, parallax, cam_x, cam_y, color, t)
     for j=0, repeats_y do
       sprite.x = pos_x + (width / 2) + (i * width)
       sprite.y = pos_y + (height / 2) + (j * height)
-      sprite:draw()
+      sprite:draw(alpha)
     end
   end
 
